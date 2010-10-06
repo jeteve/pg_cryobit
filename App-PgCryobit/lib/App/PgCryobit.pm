@@ -3,6 +3,8 @@ package App::PgCryobit;
 use Moose;
 use Config::General;
 
+use DBI;
+
 =head1 NAME
 
 App::PgCryobit - The pg_cryobit application
@@ -57,15 +59,36 @@ sub feature_checkconfig{
     
     my $conf = $self->configuration();
 
-    ## Structural checking.
+    ## Structural and functional checking.
     unless( $conf->{data_directory} ){
 	print STDERR "Missing data_directory in ".$conf->{this_file}."\n";
 	return 1;
     }
+    ## Check this data_directory can be read
+    ## This is useful for full archive
+    unless(( -d $conf->{data_directory} ) && ( -r $conf->{data_directory} )){
+	print STDERR "Cannot read directory ".$conf->{data_directory}." (defined in ".$conf->{this_file}.")\n";
+	return 1;
+    }
+
     unless( $conf->{dsn} ){
 	print STDERR "Missing dsn in ".$conf->{this_file}."\n";
 	return 1;
     }
+
+    ## Check we can connect using the dsn
+    my $dbh = DBI->connect($conf->{dsn}, undef , undef , { RaiseError => 0 , PrintError => 0 });
+    unless( $dbh ){
+	print STDERR "Cannot connect to ".$conf->{dsn}." defined in ".$conf->{this_file}."\n";
+	return 1;
+    }
+    ## Check we can call some xlog administrative functions
+    my ($current_xlogfile) = $dbh->selectrow_array('SELECT pg_xlogfile_name(pg_current_xlog_location())');
+    unless( $current_xlogfile ){
+	print STDERR "Cannot find current_xlogfile. Make sure your dsn connects to the DB as a super user in ".$conf->{this_file}."\n";
+	return 1;
+    }
+
     unless( $conf->{shipper} ){
 	print STDERR "Missing shipper section in".$conf->{this_file}."\n";
 	return 1;
