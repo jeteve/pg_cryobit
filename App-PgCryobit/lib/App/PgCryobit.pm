@@ -25,7 +25,8 @@ our $VERSION = '0.01';
 
 has 'config_paths' => ( is => 'ro' , isa => 'ArrayRef', required =>  1);
 has 'configuration' => ( is => 'ro' , isa => 'HashRef' , lazy_build => 1 ); 
-has 'config_file' => ( is => 'ro' , isa => 'String' , lazy_build => 1);
+## TODO: Implement the virtual class App::PgCryobit::Shipper
+has 'shipper' => ( is => 'ro' , isa => 'App::PgCryobit::Shipper' , lazy_build => 1);
 
 sub _build_configuration{
     my ($self) = @_;
@@ -43,6 +44,15 @@ sub _build_configuration{
 	}
     }
     die "No pg_cryobit.conf could be found in paths ".join(':',@{$self->config_paths()}); 
+}
+
+sub _build_shipper{
+    my ($self) = @_;
+    my $shipper_factory = Class::MOP::load_class($self->configuration->{shipper}->{plugin});
+    unless( $shipper_factory ){
+	die "Cannot find factory plugin ".$self->configuration->{shipper}->{plugin}."\n";
+    }
+    return $shipper_factory->build_shipper($self->configuration(), $self->configuration->{shipper} );
 }
 
 =head2 feature_checkconfig
@@ -93,6 +103,11 @@ sub feature_checkconfig{
 	print STDERR "Missing shipper section in".$conf->{this_file}."\n";
 	return 1;
     }
+    unless( $conf->{shipper}->{plugin} ){
+	print STDERR "Missing plugin class definition in shipper in ".$conf->{this_file}."\n";
+	return 1;
+    }
+    ## TODO: Check we can load that and try building the shipper.
     if( my $errcode = $self->feature_checkshipper() ){ return $errcode ;}
 
     return 0;
