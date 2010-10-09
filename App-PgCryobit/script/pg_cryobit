@@ -13,7 +13,7 @@ my $specific_conf_file;
 
 
 my @OPTIONS_ARRAY = @ARGV;
-my $COMMAND = shift @OPTIONS_ARRAY if ( $OPTIONS_ARRAY[0] !~ /--/ );
+my $COMMAND = shift @OPTIONS_ARRAY if ( @OPTIONS_ARRAY &&  ( $OPTIONS_ARRAY[0] !~ /--/ ) );
 
 my $opts_result = 
   GetOptionsFromArray(
