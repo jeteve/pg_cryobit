@@ -1,0 +1,25 @@
+#! /usr/bin/perl -w
+use strict;
+use Getopt::Long;
+use App::PgCryobit;
+
+my @config_paths =  ('pg_cryobit.conf',
+		     $ENV{HOME}.'/pg_cryobit.conf',
+		     '/etc/pg_cryobit.conf' );
+
+my $specific_conf_file;
+my $opts_result = GetOptions( "conf=s" => \$specific_conf_file );
+
+if ( $specific_conf_file ){
+  @config_paths = ( $specific_conf_file );
+}
+
+my $app =  App::PgCryobit->new({ config_paths => \@config_paths });
+
+## Always check the config. It might have change since last call.
+my $conf_code = $app->feature_checkconfig();
+exit($conf_code) if ( $conf_code );
+
+
+## All went fine.
+exit(0);

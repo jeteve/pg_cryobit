@@ -2,6 +2,7 @@ use inc::Module::Install;
 
 name     'App-PgCryobit';
 all_from 'lib/App/PgCryobit.pm';
+install_script 'pg_cryobit';
 author   q{Jerome Eteve <jerome@eteve.net>};
 license  'perl';
 
