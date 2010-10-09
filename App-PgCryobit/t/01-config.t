@@ -1,6 +1,6 @@
 #!perl -w
 
-use Test::More qw/no_plan/;
+use Test::More tests => 24;
 use Test::Exception;
 use Test::postgresql;
 use File::Temp;
