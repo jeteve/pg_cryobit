@@ -16,7 +16,9 @@ has 'config' => ( is => 'ro' , isa => 'HashRef' , required => 1);
 
 =head2 build_shipper
 
-Builds a L<App::PgCryobit::Shipper> with this factory.
+Builds a functional L<App::PgCryobit::Shipper> with this factory.
+
+This MUST die meaningfully in case the configuration is wrong, thereforce the shipper will not be functionnal.
 
 =cut
 

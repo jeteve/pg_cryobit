@@ -143,6 +143,13 @@ sub feature_checkshipper{
 	print STDERR $@;
 	return 1;
     }
+    eval{
+	$shipper->check_config();
+    };
+    if ( $@ ){
+	print STDERR $@;
+	return 1;
+    }
     return 0;
 }
 

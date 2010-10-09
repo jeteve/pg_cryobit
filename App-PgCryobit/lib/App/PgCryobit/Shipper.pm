@@ -30,4 +30,19 @@ sub ship_snapshot_file{
 }
 
 
+=head2 check_config
+
+Checks this Shipper's configuration is correct.
+
+Returns 0 if it is.
+
+Dies if it's not.
+
+=cut
+
+sub check_config{
+    my ($self) = @_;
+    die "Please implement check_config in $self\n";
+}
+
 1;
