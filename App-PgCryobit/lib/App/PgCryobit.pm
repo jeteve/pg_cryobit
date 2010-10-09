@@ -48,11 +48,17 @@ sub _build_configuration{
 
 sub _build_shipper{
     my ($self) = @_;
-    my $shipper_factory = Class::MOP::load_class($self->configuration->{shipper}->{plugin});
+    my $shipper_factory;
+    my $factory_class = $self->configuration->{shipper}->{plugin};
+    eval{ $shipper_factory = Class::MOP::load_class($factory_class) };
     unless( $shipper_factory ){
-	die "Cannot find factory plugin ".$self->configuration->{shipper}->{plugin}."\n";
+	$factory_class = 'App::PgCryobit::ShipperFactory::'.$factory_class;
+	eval{ $shipper_factory = Class::MOP::load_class($factory_class) };
     }
-    return $shipper_factory->build_shipper($self->configuration(), $self->configuration->{shipper} );
+    unless( $shipper_factory ){
+	die "Cannot load factory plugin ".$factory_class.".\n  * If this class is known to exists, try loading it with Perl -M$factory_class\n";
+    }
+    return $factory_class->new( { config => $self->configuration->{shipper} } )->build_shipper();
 }
 
 =head2 feature_checkconfig
@@ -67,7 +73,14 @@ Returns 0 if everything went fine.
 sub feature_checkconfig{
     my ($self) = @_;
     
-    my $conf = $self->configuration();
+    my $conf;
+    eval{
+	$conf = $self->configuration();
+    };
+    if( $@ ){
+	print STDERR $@;
+	return 1;
+    }
 
     ## Structural and functional checking.
     unless( $conf->{data_directory} ){
@@ -107,6 +120,7 @@ sub feature_checkconfig{
 	print STDERR "Missing plugin class definition in shipper in ".$conf->{this_file}."\n";
 	return 1;
     }
+    
     ## TODO: Check we can load that and try building the shipper.
     if( my $errcode = $self->feature_checkshipper() ){ return $errcode ;}
 
@@ -123,6 +137,12 @@ Perform some sanity check on the configured shipper. Returns 1 in case of failur
 
 sub feature_checkshipper{
     my ($self) = @_;
+    my $shipper;
+    eval{ $shipper = $self->shipper(); };
+    if( $@ ){
+	print STDERR $@;
+	return 1;
+    }
     return 0;
 }
 
