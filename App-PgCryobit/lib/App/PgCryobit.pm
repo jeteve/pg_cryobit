@@ -156,6 +156,17 @@ sub feature_checkshipper{
     return 0;
 }
 
+=head2 feature_archivewal
+
+Archive wal file present in options as 'file' using the defined shipper.
+
+Returns 0 in case of success.
+1 in case of failure.
+
+See man pg_cryobit for more info.
+
+=cut
+
 sub feature_archivewal{
     my ($self) = @_;
     unless( $self->options()->{file} ){

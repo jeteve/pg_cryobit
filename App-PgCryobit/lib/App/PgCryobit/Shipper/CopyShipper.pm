@@ -2,7 +2,25 @@ package App::PgCryobit::Shipper::CopyShipper;
 use Moose;
 extends qw/App::PgCryobit::Shipper/;
 
+use File::Copy;
+use File::Basename;
+
 has 'backup_dir' => ( is => 'ro' , isa => 'Str' , required => 1 );
+has 'xlog_dir' => ( is => 'ro' , isa => 'Str' , lazy_build => 1 );
+
+sub _build_xlog_dir{
+    my ($self) = @_;
+    $self->check_config();
+
+    my $xlog_dir = $self->backup_dir().'/xlogs';
+    if( -d $xlog_dir ){
+	return $xlog_dir;
+    }
+    if ( mkdir $xlog_dir ){
+	return $xlog_dir;
+    }
+    die "Cannot create $xlog_dir for $self\n";
+}
 
 =head1 NAME
 
@@ -27,5 +45,22 @@ sub check_config{
     return 0;
 }
 
+=head2 ship_xlog_file
+
+See L<App::PgCryobit::Shipper>
+
+=cut
+
+sub ship_xlog_file{
+    my ($self , $file) = @_;
+    
+    my $basename = basename($file);
+    my $destination = $self->xlog_dir().'/'.$basename;
+    if ( -f $destination ){
+	die "Destination file $destination already exists for copying $file\n";
+    }
+    # Copy the file to the basename
+    copy($file,$self->xlog_dir().'/'.$basename) or die "Copy from $file to $destination failed: $!\n";
+}
 
 1;

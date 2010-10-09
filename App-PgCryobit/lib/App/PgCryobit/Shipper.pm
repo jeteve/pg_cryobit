@@ -11,6 +11,8 @@ App::PgCryobit::Shipper - A shipper base virtual class
 
 Copies the given log_file somewhere safe.
 
+Dies in case of failure.
+
 =cut
 
 sub ship_xlog_file{
@@ -21,6 +23,8 @@ sub ship_xlog_file{
 =head2 ship_snapshot_file
 
 Copies the given snapshot_file somewhere safe.
+
+Dies in case of failure.
 
 =cut
 

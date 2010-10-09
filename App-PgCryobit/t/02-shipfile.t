@@ -1,6 +1,6 @@
 #!perl -w
 
-use Test::More tests => 11;
+use Test::More tests => 12;
 use Test::Exception;
 use Test::postgresql;
 use File::Temp;
@@ -33,3 +33,5 @@ is( $cryo->feature_archivewal() , 1 , "Archiving a non existing file is not OK")
 ok( $cryo->options( { file => $filename } ), "Ok setting options");
 
 is( $cryo->feature_archivewal(), 0 , "Archiving has succedeed");
+## Archiving a second time the same file should crash
+is( $cryo->feature_archivewal(), 1, "Second archiving of the same file is impossible");
