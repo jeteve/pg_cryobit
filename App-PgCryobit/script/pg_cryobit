@@ -19,7 +19,8 @@ my $opts_result =
   GetOptionsFromArray(
 	     \@OPTIONS_ARRAY,
 	     \%OPTIONS_HASH,
-	     "conf=s"
+	     "conf=s",
+	     "file=s",
 	    );
 
 ## Deal with help and exit
@@ -33,7 +34,7 @@ if ( $OPTIONS_HASH{conf} ){
 }
 my $app =  App::PgCryobit->new({ config_paths => \@config_paths });
 # Store the given options in the application.
-$app->options(\%options_hash);
+$app->options(\%OPTIONS_HASH);
 
 ## Check the app can perform the command
 my $command_method = 'feature_'.$COMMAND;
@@ -56,7 +57,7 @@ pg_cryobit - Manage PostgreSQL continuous backup
 
 =head1 SYNOPSIS
 
-pg_cryobit help|man|checkconfig [options]
+pg_cryobit help|man|checkconfig|archivewal [options]
 
 =head1 OPTIONS
 
@@ -68,15 +69,23 @@ pg_cryobit help|man|checkconfig [options]
 
 Checks the configuration file is correct.
 
+=item B<archivewal>
+
+Archive a given WAL file using the configured shipper. Requires options --file.
+
 =back
 
 =head2 COMMANDS OPTIONS
 
 =over 8
 
-=item  --conf=file
+=item  --conf=<file>
 
-Specify configuration file on the command line.
+Specify configuration file on the command line. Applies to all commands.
+
+=item --file=<file>
+
+Specify file to handle. Applies to archivewal
 
 =back
 
