@@ -15,7 +15,8 @@ Version 0.01
 
 =head1 SYNOPSIS
 
-Use the pg_cryobit command to call this.
+This class is effectively a serie of scripts, meant to be called
+by the pg_cryobit command.
 
 =head1 SUBROUTINES/METHODS
 
@@ -25,7 +26,7 @@ our $VERSION = '0.01';
 
 has 'config_paths' => ( is => 'ro' , isa => 'ArrayRef', required =>  1);
 has 'configuration' => ( is => 'ro' , isa => 'HashRef' , lazy_build => 1 ); 
-## TODO: Implement the virtual class App::PgCryobit::Shipper
+
 has 'shipper' => ( is => 'ro' , isa => 'App::PgCryobit::Shipper' , lazy_build => 1);
 
 sub _build_configuration{
@@ -121,7 +122,6 @@ sub feature_checkconfig{
 	return 1;
     }
     
-    ## TODO: Check we can load that and try building the shipper.
     if( my $errcode = $self->feature_checkshipper() ){ return $errcode ;}
 
     return 0;

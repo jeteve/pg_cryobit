@@ -1,25 +1,80 @@
 #! /usr/bin/perl -w
 use strict;
-use Getopt::Long;
+use Getopt::Long qw/GetOptionsFromArray/;
+use Pod::Usage;
 use App::PgCryobit;
+
 
 my @config_paths =  ('pg_cryobit.conf',
 		     $ENV{HOME}.'/pg_cryobit.conf',
 		     '/etc/pg_cryobit.conf' );
 
 my $specific_conf_file;
-my $opts_result = GetOptions( "conf=s" => \$specific_conf_file );
+
+
+my @OPTIONS_ARRAY = @ARGV;
+my $COMMAND = shift @OPTIONS_ARRAY if ( $OPTIONS_ARRAY[0] !~ /--/ );
+
+my $opts_result = 
+  GetOptionsFromArray(
+	     \@OPTIONS_ARRAY,
+	     "conf=s" => \$specific_conf_file
+	    );
+
+## Deal with help and exit
+pod2usage(1) unless $COMMAND;
+pod2usage(1) if $COMMAND eq 'help' ;
+pod2usage(-exitstatus => 0, -verbose => 2) if $COMMAND eq 'man';
+
 
 if ( $specific_conf_file ){
   @config_paths = ( $specific_conf_file );
 }
-
 my $app =  App::PgCryobit->new({ config_paths => \@config_paths });
+
+## Check the app can perform the command
+my $command_method = 'feature_'.$COMMAND;
+pod2usage(1) unless $app->can($command_method);
+
 
 ## Always check the config. It might have change since last call.
 my $conf_code = $app->feature_checkconfig();
 exit($conf_code) if ( $conf_code );
 
+my $command_code  = $app->$command_method();
+exit($command_code);
 
-## All went fine.
-exit(0);
+
+__END__
+
+=head1 NAME
+
+pg_cryobit - Manage PostgreSQL continuous backup
+
+=head1 SYNOPSIS
+
+pg_cryobit help|man|checkconfig [options]
+
+=head1 OPTIONS
+
+=head2 COMMANDS
+
+=over 8
+
+=item B<checkconfig>
+
+Checks the configuration file is correct.
+
+=back
+
+=head2 COMMANDS OPTIONS
+
+=over 8
+
+=item  --conf=file
+
+Specify configuration file on the command line.
+
+=back
+
+=cut

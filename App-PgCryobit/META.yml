@@ -23,7 +23,9 @@ no_index:
 requires:
   Config::General: 2.44
   DBD::Pg: 2.16.1
+  Getopt::Long: 2.38
   Moose: 0.94
+  Pod::Usage: 1.36
 resources:
   license: http://dev.perl.org/licenses/
 version: 0.01
