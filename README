@@ -19,17 +19,17 @@ $ cpan -i App::PgCryobit
 
 It can be as simple as this:
 
-archive_command = 'pg_cryobit --archivewal %p'
+archive_command = 'pg_cryobit archivewal --file=%p'
 
 3 - Restart your PostgreSQL server and test your configuration:
 
-$ pg_cryobit --testconf
+$ pg_cryobit fullarchive
 
 (Note: this will perform a test wal logs switch and an archive snapshot)
 
 4 - Whenever you want to take a full snapshot of your PostgreSQL DB, use:
 
-$ pg_cryobit --archivesnapshot
+$ pg_cryobit archivesnapshot
 
 5 - Job done.
 

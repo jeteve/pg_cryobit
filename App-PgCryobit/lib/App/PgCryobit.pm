@@ -29,6 +29,9 @@ has 'configuration' => ( is => 'ro' , isa => 'HashRef' , lazy_build => 1 );
 
 has 'shipper' => ( is => 'ro' , isa => 'App::PgCryobit::Shipper' , lazy_build => 1);
 
+## The command line options. The script sets these.
+has 'options' => ( is => 'rw', isa => 'HashRef' , default => sub{ return {} } );
+
 sub _build_configuration{
     my ($self) = @_;
     my %configuration;
@@ -150,6 +153,30 @@ sub feature_checkshipper{
 	print STDERR $@;
 	return 1;
     }
+    return 0;
+}
+
+sub feature_archivewal{
+    my ($self) = @_;
+    unless( $self->options()->{file} ){
+	print STDERR "Missing options 'file'\n";
+	return 1;
+    }
+    my $file = $self->options()->{file} ;
+    unless( -f $file && -r $file ){
+	print STDERR "Cannot read file ".$file."\n";
+	return 1;
+    }
+
+    my $shipper = $self->shipper();
+    eval{
+	$shipper->ship_xlog_file($file);
+    };
+    if( $@ ){
+	print STDERR "ERROR SHIPPING FILE: $@\n";
+	return 1;
+    }
+
     return 0;
 }
 

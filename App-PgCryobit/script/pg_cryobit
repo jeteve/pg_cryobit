@@ -9,7 +9,7 @@ my @config_paths =  ('pg_cryobit.conf',
 		     $ENV{HOME}.'/pg_cryobit.conf',
 		     '/etc/pg_cryobit.conf' );
 
-my $specific_conf_file;
+my %OPTIONS_HASH;
 
 
 my @OPTIONS_ARRAY = @ARGV;
@@ -18,7 +18,8 @@ my $COMMAND = shift @OPTIONS_ARRAY if ( @OPTIONS_ARRAY &&  ( $OPTIONS_ARRAY[0] !
 my $opts_result = 
   GetOptionsFromArray(
 	     \@OPTIONS_ARRAY,
-	     "conf=s" => \$specific_conf_file
+	     \%OPTIONS_HASH,
+	     "conf=s"
 	    );
 
 ## Deal with help and exit
@@ -27,10 +28,12 @@ pod2usage(1) if $COMMAND eq 'help' ;
 pod2usage(-exitstatus => 0, -verbose => 2) if $COMMAND eq 'man';
 
 
-if ( $specific_conf_file ){
-  @config_paths = ( $specific_conf_file );
+if ( $OPTIONS_HASH{conf} ){
+  @config_paths = ( $OPTIONS_HASH{conf} );
 }
 my $app =  App::PgCryobit->new({ config_paths => \@config_paths });
+# Store the given options in the application.
+$app->options(\%options_hash);
 
 ## Check the app can perform the command
 my $command_method = 'feature_'.$COMMAND;

@@ -12,6 +12,9 @@ requires 'DBD::Pg' => '2.16.1';
 requires 'Pod::Usage' => 1.36;
 requires 'Getopt::Long' => 2.38;
 
+## This module is to be used only on a PostgreSQL fitted box
+requires_external_bin 'pg_ctlcluster';
+
 build_requires 'Test::More';
 build_requires 'Test::Exception';
 build_requires 'Test::postgresql' => 0.09;

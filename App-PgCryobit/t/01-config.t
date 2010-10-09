@@ -11,6 +11,7 @@ BEGIN {
 }
 
 my $temp_backup_dir = File::Temp::tempdir(CLEANUP =>1);
+diag("Building a test instance of PostgreSQL. This will take a while");
 my $pgsql = Test::postgresql->new()
     or plan skip_all => $Test::postgresql::errstr;
 
