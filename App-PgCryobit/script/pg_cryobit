@@ -6,7 +6,7 @@ use App::PgCryobit;
 
 
 my @config_paths =  ('pg_cryobit.conf',
-		     $ENV{HOME}.'/pg_cryobit.conf',
+		     ( $ENV{HOME} // '.' ).'/pg_cryobit.conf',
 		     '/etc/pg_cryobit.conf' );
 
 my %OPTIONS_HASH;
