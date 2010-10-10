@@ -57,7 +57,7 @@ pg_cryobit - Manage PostgreSQL continuous backup
 
 =head1 SYNOPSIS
 
-pg_cryobit help|man|checkconfig|archivewal [options]
+pg_cryobit help|man|checkconfig|archivewal|rotatewal [options]
 
 =head1 OPTIONS
 
@@ -72,6 +72,10 @@ Checks the configuration file is correct.
 =item B<archivewal>
 
 Archive a given WAL file using the configured shipper. Requires options --file.
+
+=item B<rotatewal>
+
+Forces a wal rotation. Checks the rotated file has been shipped. No required options.
 
 =back
 
