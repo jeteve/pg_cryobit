@@ -109,4 +109,37 @@ sub xlog_has_arrived{
     return 0;
 }
 
+=head2 clean_xlogs_youngerthan
+
+See L<App::PgCryobit::Shipper>
+
+=cut
+
+sub clean_xlogs_youngerthan{
+    my ($self, $file) = @_;
+    my @candidates = glob $self->xlog_dir().'/*';
+    foreach my $candidate ( @candidates ){
+	if ( $candidate lt $file ){
+	    unlink $candidate or die "Cannot remove $candidate: $!\n";
+	}
+    }
+}
+
+=head2 clean_archives_youngerthan
+
+See L<App::PgCryobit::Shipper>
+
+=cut
+
+sub clean_archives_youngerthan{
+    my ($self, $file) = @_;
+    my @candidates = glob $self->snapshot_dir().'/*';
+    foreach my $candidate ( @candidates ){
+	if ( $candidate lt $file ){
+	    unlink $candidate or die "Cannot remove $candidate: $!\n";
+	}
+    }
+}
+
+
 1;

@@ -63,7 +63,7 @@ sub _build_shipper{
 	eval{ $shipper_factory = Class::MOP::load_class($factory_class) };
     }
     unless( $shipper_factory ){
-	die "Cannot load factory plugin ".$factory_class.".\n  * If this class is known to exists, try loading it with Perl -M$factory_class\n";
+	die "Cannot load factory plugin ".$factory_class.".\n  * If this class is known to exists, try loading it with perl -M$factory_class\n";
     }
     return $factory_class->new( { config => $self->configuration->{shipper} } )->build_shipper();
 }
@@ -275,10 +275,11 @@ sub feature_archivesnapshot{
     }
     $archived_offset = sprintf("%08x", $archived_offset);
 
+    my $archive_full_file;
     eval{
       # Prefix archive name with configuration 'snapshooting_dir' or current dir
-      $archive_name = ( $self->configuration->{snapshooting_dir} || './' ).$archive_name;
-      my $cmd = 'tar -cvzhf '.$archive_name.' '.$self->configuration->{data_directory};
+      $archive_full_file = ( $self->configuration->{snapshooting_dir} || './' ).$archive_name;
+      my $cmd = 'tar -cvzhf '.$archive_full_file.' '.$self->configuration->{data_directory};
       my $tar_ret = system($cmd);
       if( $tar_ret != 0 ){
 	die "Archiving command $cmd has failed\n";
@@ -295,7 +296,7 @@ sub feature_archivesnapshot{
 
     ## Ship the archive file
     eval{
-	$shipper->ship_snapshot_file($archive_name);
+	$shipper->ship_snapshot_file($archive_full_file);
     };
     if( $@ ){
 	print STDERR "Error shipping $archive_name : $@\n";
@@ -317,6 +318,20 @@ sub feature_archivesnapshot{
 	return 1;
     }
 
+    if( $self->options()->{deepclean} ){
+      print STDERR "Will perform a deep clean\n";
+      ## Deepcleaning has been requested
+      eval{
+	print STDERR "Cleaning wal logs younger than $archived_wal\n";
+	$shipper->clean_xlogs_youngerthan($archived_wal);
+	print STDERR "Cleaning archives snapshots younger than $archive_name\n";
+	$shipper->clean_archives_youngerthan($archive_name);
+      };
+      if( $@ ){
+	print STDERR "Cannot perform deepclean : $@\n";
+	return 1;
+      }
+    } ## end of if deepclean
     return 0;
 }
 

@@ -56,6 +56,27 @@ sub ship_snapshot_file{
     die "Please implement ship_snapshot_file in $self\n";
 }
 
+=head2 clean_xlogs_youngerthan
+
+Removes xlogs smaller than the given filename from the safe storage.
+
+=cut
+
+sub clean_xlogs_youngerthan{
+    my ($self, $file) = @_;
+    die "Please implement clean_xlogs_youngerthan in $self\n";
+}
+
+=head2 clean_archives_youngerthan
+
+Remove archives smaller than the given filename from the safe storage.
+
+=cut
+
+sub clean_archives_youngerthan{
+    my ($self, $file) = @_;
+    die "Please implement clean_archives_youngerthan in $self\n";
+}
 
 =head2 check_config
 

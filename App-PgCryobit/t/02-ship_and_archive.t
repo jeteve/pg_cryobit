@@ -50,7 +50,7 @@ my ($fh, $filename) = File::Temp::tempfile();
 
 ok( $cryo->options( { file =>  'pouleaupot' } ) , "Ok setting options");
 is( $cryo->feature_archivewal() , 1 , "Archiving a non existing file is not OK");
-ok( $cryo->options( { file => $filename } ), "Ok setting options");
+ok( $cryo->options( { file => $filename , deepclean => 1 } ), "Ok setting options");
 
 is( $cryo->feature_archivewal(), 0 , "Archiving has succedeed");
 ## Archiving a second time the same file should crash

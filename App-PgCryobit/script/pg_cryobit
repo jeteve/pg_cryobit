@@ -21,6 +21,7 @@ my $opts_result =
 	     \%OPTIONS_HASH,
 	     "conf=s",
 	     "file=s",
+	     "deepclean",
 	    );
 
 ## Deal with help and exit
@@ -77,6 +78,10 @@ Archive a given WAL file using the configured shipper. Requires options --file.
 
 Forces a wal rotation. Checks the rotated file has been shipped. No required options.
 
+=item B<archivesnapshot>
+
+Take a snapshot archive of the whole database. No required options.
+
 =back
 
 =head2 COMMANDS OPTIONS
@@ -90,6 +95,10 @@ Specify configuration file on the command line. Applies to all commands.
 =item --file=<file>
 
 Specify file to handle. Applies to archivewal
+
+=item --deepclean
+
+Remove anything earlier than the last archivesnapshot. Applies to archivesnapshot
 
 =back
 
