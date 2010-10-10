@@ -1,6 +1,6 @@
 #!perl -w
 
-use Test::More tests => 14;
+use Test::More tests => 15;
 use Test::Exception;
 use Test::postgresql;
 use File::Temp;
@@ -55,3 +55,4 @@ is( $cryo->feature_archivewal(), 1, "Second archiving of the same file is imposs
 is( $cryo->feature_rotatewal(), 0 , "Rotating wal is OK" );
 ## And another one
 is( $cryo->feature_rotatewal(), 0 , "Rotating a second time is OK");
+is( $cryo->feature_archivesnapshot(), 0 , "Taking a snapshot and archiving it is OK");

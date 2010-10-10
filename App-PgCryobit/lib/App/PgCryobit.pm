@@ -259,6 +259,36 @@ sub feature_archivesnapshot{
     ## File system level snapshot the data_directory.
     ## Whatever happens. Stop the backup. We dont want the database to be in a backup state forever.
     ## Ship the created archive and check it has arrived.
+    my $dbh = DBI->connect($self->configuration->{dsn}, undef , undef , { RaiseError => 0 , PrintError => 0 });
+    my ($archive_row) = $dbh->selectrow_array('SELECT pg_xlogfile_name_offset(pg_start_backup(\'toto\'))');
+    my ($archived_wal,$archived_offset) = ( $archive_row =~ /\((\w+?),(\w+?)\)/ );
+    unless( $archived_wal && $archived_offset ){
+	print STDERR "Cannot parse wal and offet from $archive_row\n";
+	return 1;
+    }
+    $archived_offset = sprintf("%08x", $archived_offset);
+    print STDERR "Archived wal : $archived_wal. archived offset: $archived_offset";
+    my ($end_archived_row) = $dbh->selectrow_array('SELECT  pg_xlogfile_name_offset( pg_stop_backup())');
+
+    my $shipper = $self->shipper();
+
+    ## Wait for archive_wal.archive_offset.backup to be shipped.
+    my $time_spend_waiting = 0;
+    sleep(1);
+    while( $time_spend_waiting < 60 ){
+	if( $shipper->xlog_has_arrived($archived_wal) && $shipper->xlog_has_arrived($archived_wal.'.'.$archived_offset.'.backup') ){
+	    $time_spend_waiting = 0;
+	    last;
+	}
+	sleep(10);
+	$time_spend_waiting += 10;
+    }
+    if( $time_spend_waiting ){
+	print STDERR "$archived_wal and $archived_wal.$archived_offset.backup are not shipped after $time_spend_waiting seconds\n";
+	return 1;
+    }
+
+    return 0;
 }
 
 =head1 AUTHOR
