@@ -15,14 +15,17 @@ unless( -f $script_file && -x $script_file ){
     BAIL_OUT($script_file." is not executable or does not exists");
 }
 
+my $test_lib_dir = File::Spec->rel2abs('./lib/');
+
+my ( $tc_fh , $tc_file ) = File::Temp::tempfile();
+
 my $temp_backup_dir = File::Temp::tempdir(CLEANUP =>1);
 diag("Building a test instance of PostgreSQL. Expect about one minute");
 diag("Do not pay attention to the error messages if the test passes");
 my $pgsql = Test::postgresql->new(
-    postmaster_args => $Test::postgresql::Defaults{postmaster_args} . ' -c archive_mode=on -c archive_command=\''.$script_file.' archivewal --file=%p \''
+    postmaster_args => $Test::postgresql::Defaults{postmaster_args} . ' -c archive_mode=on -c archive_command=\'perl -I'.$test_lib_dir.' '.$script_file.' archivewal --file=%p --conf='.$tc_file.'\''
     )
     or plan skip_all => $Test::postgresql::errstr;
-
 
 ## Try the same thing with a file path
 my $cryo;
@@ -60,4 +63,6 @@ ok( $cryo->configuration()->{dsn} = $pgsql->dsn() , "Ok setting DSN with test se
 is( $cryo->feature_checkconfig() , 1 , "Still does not pass the test. We need a good directory"); 
 ok( $cryo->configuration()->{data_directory} = $pgsql->base_dir(), "Ok setting the base dir to the one of the test harness");
 ok( $cryo->configuration()->{shipper}->{backup_dir} = $temp_backup_dir , "Ok setting the backup_dir");
+## Dump the right config to the temp conf file used by the database.
+$cryo->config_general()->save_file($tc_file, $cryo->configuration());
 is ( $cryo->feature_checkconfig(), 0 , "All is file");

@@ -2,7 +2,7 @@ package App::PgCryobit;
 
 use Moose;
 use Config::General;
-
+use File::Temp;
 use DBI;
 
 =head1 NAME
@@ -121,7 +121,12 @@ sub feature_checkconfig{
     ## Check archive mode is ON
     my ($archive_mode) = $dbh->selectrow_array('SHOW archive_mode');
     unless( $archive_mode eq 'on' ){
-	print STDERR "archive_mode is NOT 'on' in database. Please fix that";
+	print STDERR "archive_mode is NOT 'on' in database. Please fix that\n";
+	return 1;
+    }
+    my ($archive_command) = $dbh->selectrow_array('SHOW archive_command');
+    unless( $archive_command =~ /pg_cryobit/ ){
+	print STDERR "archive_command (=$archive_command) does NOT make use of pg_cryobit. Please fix that\n";
 	return 1;
     }
 
@@ -228,6 +233,7 @@ sub feature_rotatewal{
     my $shipper = $self->shipper();
     
     my $time_spend_waiting = 0;
+    sleep(1);
     while( $time_spend_waiting < 60 ){
 	if( $shipper->xlog_has_arrived($shipped_log) ){
 	    return 0;

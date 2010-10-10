@@ -13,6 +13,7 @@ requires 'Pod::Usage' => 1.36;
 requires 'Getopt::Long' => 2.38;
 requires 'File::Copy' => 2.14;
 requires 'File::Basename' => 2.77;
+requires 'File::Temp';
 
 ## This module is to be used only on a PostgreSQL fitted box
 requires_external_bin 'pg_ctlcluster';

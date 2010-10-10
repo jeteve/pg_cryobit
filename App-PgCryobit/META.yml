@@ -26,6 +26,7 @@ requires:
   DBD::Pg: 2.16.1
   File::Basename: 2.77
   File::Copy: 2.14
+  File::Temp: 0
   Getopt::Long: 2.38
   Moose: 0.94
   Pod::Usage: 1.36
