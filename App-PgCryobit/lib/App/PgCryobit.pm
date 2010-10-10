@@ -212,6 +212,23 @@ sub feature_archivewal{
     return 0;
 }
 
+=head2 feature_fullarchive
+
+Composes rotatewal and archivesnapshot.
+
+=cut
+
+sub feature_fullarchive{
+  my ($self) = @_;
+  if ( my $code = $self->feature_rotatewal() ){
+    return $code;
+  }
+  if ( my $code_snapshot = $self->feature_archivesnapshot() ){
+    return $code_snapshot;
+  }
+  return 0;
+}
+
 =head2 feature_rotatewal
 
 Assumes checkconfig has been called before.
