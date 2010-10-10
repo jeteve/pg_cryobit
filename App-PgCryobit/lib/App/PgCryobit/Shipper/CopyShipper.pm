@@ -92,7 +92,7 @@ sub ship_snapshot_file{
 	die "Destination file $destination already exists for copying $file\n";
     }
     # Copy the file to the basename
-    copy($file,$self->xlog_dir().'/'.$basename) or die "Copy from $file to $destination failed: $!\n";
+    copy($file,$destination) or die "Copy from $file to $destination failed: $!\n";
 }
 
 =head2 xlog_has_arrived
@@ -119,7 +119,7 @@ sub clean_xlogs_youngerthan{
     my ($self, $file) = @_;
     my @candidates = glob $self->xlog_dir().'/*';
     foreach my $candidate ( @candidates ){
-	if ( $candidate lt $file ){
+	if ( basename($candidate) lt $file ){
 	    unlink $candidate or die "Cannot remove $candidate: $!\n";
 	}
     }
@@ -135,7 +135,7 @@ sub clean_archives_youngerthan{
     my ($self, $file) = @_;
     my @candidates = glob $self->snapshot_dir().'/*';
     foreach my $candidate ( @candidates ){
-	if ( $candidate lt $file ){
+	if ( basename($candidate) lt $file ){
 	    unlink $candidate or die "Cannot remove $candidate: $!\n";
 	}
     }
