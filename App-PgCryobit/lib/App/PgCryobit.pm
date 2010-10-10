@@ -247,6 +247,20 @@ sub feature_rotatewal{
     return 1;
 }
 
+=head2 feature_archivesnapshot
+
+Performs a full archive of the PostgreSQL 'data_directory' and ships it using the shipper.
+
+=cut
+
+sub feature_archivesnapshot{
+    my ($self) = @_;
+    ##TODO: Connect to the db, issue a pg_start_backup(label text),
+    ## File system level snapshot the data_directory.
+    ## Whatever happens. Stop the backup. We dont want the database to be in a backup state forever.
+    ## Ship the created archive and check it has arrived.
+}
+
 =head1 AUTHOR
 
 Jerome Eteve, C<< <jerome at eteve.net> >>
