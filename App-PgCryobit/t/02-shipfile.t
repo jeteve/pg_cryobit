@@ -1,6 +1,6 @@
 #!perl -w
 
-use Test::More tests => 13;
+use Test::More tests => 14;
 use Test::Exception;
 use Test::postgresql;
 use File::Temp;
@@ -14,13 +14,16 @@ my $script_file = File::Spec->rel2abs( './script/pg_cryobit' ) ;
 unless( -f $script_file && -x $script_file ){
     BAIL_OUT($script_file." is not executable or does not exists");
 }
+my $test_lib_dir = File::Spec->rel2abs('./lib/');
 
 my $temp_backup_dir = File::Temp::tempdir(CLEANUP =>1);
+## This temporary configuration file will hold the correct configuration
+## within this test postgresql instance.
 my ( $tc_fh , $tc_file ) = File::Temp::tempfile();
 
 diag("Building a test instance of PostgreSQL. This will take a while");
 my $pgsql = Test::postgresql->new(
-    postmaster_args => $Test::postgresql::Defaults{postmaster_args} . ' -c archive_mode=on -c archive_command=\''.$script_file.' archivewal --file=%p --conf='.$tc_file.'\''
+    postmaster_args => $Test::postgresql::Defaults{postmaster_args} . ' -c archive_mode=on -c archive_command=\'perl -I'.$test_lib_dir.' '.$script_file.' archivewal --file=%p --conf='.$tc_file.'\''
     )
     or plan skip_all => $Test::postgresql::errstr;
 
@@ -35,8 +38,8 @@ ok( $cryo->configuration()->{data_directory} = $pgsql->base_dir(), "Ok setting t
 ok( $cryo->configuration()->{shipper}->{backup_dir} = $temp_backup_dir , "Ok setting the backup_dir");
 is ( $cryo->feature_checkconfig(), 0 , "All is fine in config");
 
-## Dump the config to the temp conf file.
-$cryo->configuration();
+## Dump the right config to the temp conf file used by the database.
+$cryo->config_general()->save_file($tc_file, $cryo->configuration());
 
 my ($fh, $filename) = File::Temp::tempfile();
 
@@ -49,3 +52,5 @@ is( $cryo->feature_archivewal(), 0 , "Archiving has succedeed");
 is( $cryo->feature_archivewal(), 1, "Second archiving of the same file is impossible");
 ## Testing rotation of wal
 is( $cryo->feature_rotatewal(), 0 , "Rotating wal is OK" );
+## And another one
+is( $cryo->feature_rotatewal(), 0 , "Rotating a second time is OK");
