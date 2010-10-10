@@ -7,6 +7,7 @@ use File::Basename;
 
 has 'backup_dir' => ( is => 'ro' , isa => 'Str' , required => 1 );
 has 'xlog_dir' => ( is => 'ro' , isa => 'Str' , lazy_build => 1 );
+has 'snapshot_dir' => ( is => 'ro', isa => 'Str', lazy_build => 1);
 
 sub _build_xlog_dir{
     my ($self) = @_;
@@ -20,6 +21,20 @@ sub _build_xlog_dir{
 	return $xlog_dir;
     }
     die "Cannot create $xlog_dir for $self\n";
+}
+
+sub _build_snapshot_dir{
+    my ($self) = @_;
+    $self->check_config();
+
+    my $snapshot_dir = $self->backup_dir().'/snapshots';
+    if( -d $snapshot_dir ){
+	return $snapshot_dir;
+    }
+    if ( mkdir $snapshot_dir ){
+	return $snapshot_dir;
+    }
+    die "Cannot create $snapshot_dir for $self\n";
 }
 
 =head1 NAME
@@ -56,6 +71,23 @@ sub ship_xlog_file{
     
     my $basename = basename($file);
     my $destination = $self->xlog_dir().'/'.$basename;
+    if ( -f $destination ){
+	die "Destination file $destination already exists for copying $file\n";
+    }
+    # Copy the file to the basename
+    copy($file,$self->xlog_dir().'/'.$basename) or die "Copy from $file to $destination failed: $!\n";
+}
+
+=head2 ship_snapshot_file
+
+See L<App::PgCryobit::Shipper>
+
+=cut
+
+sub ship_snapshot_file{
+    my ($self, $file) = @_;
+    my $basename = basename($file);
+    my $destination = $self->snapshot_dir().'/'.$basename;
     if ( -f $destination ){
 	die "Destination file $destination already exists for copying $file\n";
     }

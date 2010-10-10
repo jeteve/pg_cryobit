@@ -1,6 +1,6 @@
 #!perl -w
 
-use Test::More tests => 15;
+use Test::More tests => 16;
 use Test::Exception;
 use Test::postgresql;
 use File::Temp;
@@ -17,6 +17,7 @@ unless( -f $script_file && -x $script_file ){
 my $test_lib_dir = File::Spec->rel2abs('./lib/');
 
 my $temp_backup_dir = File::Temp::tempdir(CLEANUP =>1);
+my $temp_snapshooting_dir = File::Temp::tempdir(CLEANUP =>1);
 ## This temporary configuration file will hold the correct configuration
 ## within this test postgresql instance.
 my ( $tc_fh , $tc_file ) = File::Temp::tempfile();
@@ -35,8 +36,11 @@ my $cryo;
 lives_ok( sub{ $cryo = App::PgCryobit->new({ config_paths => ['conf_test/pg_cryobit.conf'] }); }, "Lives with good test config");
 ok(my $conf = $cryo->configuration() , "Conf is loaded");
 ok( $cryo->configuration()->{dsn} = $pgsql->dsn() , "Ok setting DSN with test server");
-ok( $cryo->configuration()->{data_directory} = $pgsql->base_dir(), "Ok setting the base dir to the one of the test harness");
+ok( $cryo->configuration()->{data_directory} = $pgsql->base_dir().'/data/' , "Ok setting the base dir to the one of the test harness");
 ok( $cryo->configuration()->{shipper}->{backup_dir} = $temp_backup_dir , "Ok setting the backup_dir");
+## Setting up the snapshooting_dir
+ok( $cryo->configuration()->{snapshooting_dir} = $temp_snapshooting_dir, "Ok setting the temp snapshooting dir");
+
 ## Dump the right config to the temp conf file used by the database.
 $cryo->config_general()->save_file($tc_file, $cryo->configuration());
 is ( $cryo->feature_checkconfig(), 0 , "All is fine in config");

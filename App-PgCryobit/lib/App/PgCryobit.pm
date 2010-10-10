@@ -101,6 +101,13 @@ sub feature_checkconfig{
 	return 1;
     }
 
+    if ( $conf->{snapshooting_dir} ){
+      unless( ( -d $conf->{snapshooting_dir} ) && ( -w $conf->{snapshooting_dir} ) ){
+	print STDERR "Cannot access ".$conf->{snapshooting_dir}." in Write mode (defined in ".$conf->{this_file}.")\n";
+	return 1;
+      }
+    }
+
     unless( $conf->{dsn} ){
 	print STDERR "Missing dsn in ".$conf->{this_file}."\n";
 	return 1;
@@ -138,7 +145,7 @@ sub feature_checkconfig{
 	print STDERR "Missing plugin class definition in shipper in ".$conf->{this_file}."\n";
 	return 1;
     }
-    
+
     if( my $errcode = $self->feature_checkshipper() ){ return $errcode ;}
     $dbh->disconnect();
     return 0;
@@ -215,7 +222,7 @@ Will force the rotation of a wal and wait for its shipping to complete.
 
 sub feature_rotatewal{
     my ($self) = @_;
-    
+
     my $dbh = DBI->connect($self->configuration->{dsn}, undef , undef , { RaiseError => 0 , PrintError => 0 });
     my ($archive_command) = $dbh->selectrow_array('SHOW archive_command');
 
@@ -231,7 +238,7 @@ sub feature_rotatewal{
 
     ## The check that this has arrived.
     my $shipper = $self->shipper();
-    
+
     my $time_spend_waiting = 0;
     sleep(1);
     while( $time_spend_waiting < 60 ){
@@ -241,7 +248,7 @@ sub feature_rotatewal{
 	sleep(10);
 	$time_spend_waiting += 10;
     }
-    
+
     print STDERR "File $shipped_log is not arrived after we waited for $time_spend_waiting seconds\n";
     print STDERR "Check your PostgreSQL logs\n";
     return 1;
@@ -255,23 +262,45 @@ Performs a full archive of the PostgreSQL 'data_directory' and ships it using th
 
 sub feature_archivesnapshot{
     my ($self) = @_;
-    ##TODO: Connect to the db, issue a pg_start_backup(label text),
-    ## File system level snapshot the data_directory.
-    ## Whatever happens. Stop the backup. We dont want the database to be in a backup state forever.
-    ## Ship the created archive and check it has arrived.
+
     my $dbh = DBI->connect($self->configuration->{dsn}, undef , undef , { RaiseError => 0 , PrintError => 0 });
-    my ($archive_row) = $dbh->selectrow_array('SELECT pg_xlogfile_name_offset(pg_start_backup(\'toto\'))');
+    my ($now) = $dbh->selectrow_array('SELECT NOW()');
+    $now =~ s/\W/_/g;
+    my $archive_name = $now.'.snapshot.tgz';
+    my ($archive_row) = $dbh->selectrow_array('SELECT pg_xlogfile_name_offset(pg_start_backup('.$dbh->quote($archive_name).'))');
     my ($archived_wal,$archived_offset) = ( $archive_row =~ /\((\w+?),(\w+?)\)/ );
     unless( $archived_wal && $archived_offset ){
 	print STDERR "Cannot parse wal and offet from $archive_row\n";
 	return 1;
     }
     $archived_offset = sprintf("%08x", $archived_offset);
-    print STDERR "Archived wal : $archived_wal. archived offset: $archived_offset";
+
+    eval{
+      # Prefix archive name with configuration 'snapshooting_dir' or current dir
+      $archive_name = ( $self->configuration->{snapshooting_dir} || './' ).$archive_name;
+      my $cmd = 'tar -cvzhf '.$archive_name.' '.$self->configuration->{data_directory};
+      my $tar_ret = system($cmd);
+      if( $tar_ret != 0 ){
+	die "Archiving command $cmd has failed\n";
+      }
+    };
+    if ( $@ ){
+	$dbh->selectrow_array('SELECT  pg_xlogfile_name_offset( pg_stop_backup())');
+	print STDERR "CRASH in building the main archive: $@\n";
+	return 1;
+    }
     my ($end_archived_row) = $dbh->selectrow_array('SELECT  pg_xlogfile_name_offset( pg_stop_backup())');
 
     my $shipper = $self->shipper();
 
+    ## Ship the archive file
+    eval{
+	$shipper->ship_snapshot_file($archive_name);
+    };
+    if( $@ ){
+	print STDERR "Error shipping $archive_name : $@\n";
+	return 1;
+    }
     ## Wait for archive_wal.archive_offset.backup to be shipped.
     my $time_spend_waiting = 0;
     sleep(1);

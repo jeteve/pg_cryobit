@@ -17,6 +17,7 @@ requires 'File::Temp';
 
 ## This module is to be used only on a PostgreSQL fitted box
 requires_external_bin 'pg_ctlcluster';
+requires_external_bin 'tar';
 
 build_requires 'Test::More';
 build_requires 'Test::Exception';
