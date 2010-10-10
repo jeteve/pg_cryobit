@@ -215,10 +215,10 @@ sub feature_rotatewal{
     my ($archive_command) = $dbh->selectrow_array('SHOW archive_command');
 
     ## Perform some transactions so the forced rotation will actually rotate.
-    $dbh->do('DROP TABLE IF EXISTS to_force_rotation');
-    $dbh->do('CREATE TABLE to_force_rotation (id TEXT)');
-    $dbh->do('INSERT INTO force_rotation(id) VALUES(\'Blablabla\')');
-    $dbh->do('DROP TABLE to_force_rotation');
+    $dbh->do('DROP TABLE IF EXISTS pg_cryobit_to_force_rotation');
+    $dbh->do('CREATE TABLE pg_cryobit_to_force_rotation (id TEXT)');
+    $dbh->do('INSERT INTO pg_cryobit_force_rotation(id) VALUES(\'Blablabla\')');
+    $dbh->do('DROP TABLE pg_cryobit_to_force_rotation');
 
     my ($shipped_log) = $dbh->selectrow_array('SELECT pg_xlogfile_name(pg_switch_xlog())');
     print STDERR "PostgreSQL will attempt to ship file $shipped_log using archive_command $archive_command\n";
