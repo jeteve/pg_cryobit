@@ -16,7 +16,8 @@ unless( -f $script_file && -x $script_file ){
 }
 
 my $temp_backup_dir = File::Temp::tempdir(CLEANUP =>1);
-diag("Building a test instance of PostgreSQL. This will take a while");
+diag("Building a test instance of PostgreSQL. Expect about one minute");
+diag("Do not pay attention to the error messages if the test passes");
 my $pgsql = Test::postgresql->new(
     postmaster_args => $Test::postgresql::Defaults{postmaster_args} . ' -c archive_mode=on -c archive_command=\''.$script_file.' archivewal --file=%p \''
     )

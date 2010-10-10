@@ -21,7 +21,8 @@ my $temp_backup_dir = File::Temp::tempdir(CLEANUP =>1);
 ## within this test postgresql instance.
 my ( $tc_fh , $tc_file ) = File::Temp::tempfile();
 
-diag("Building a test instance of PostgreSQL. This will take a while");
+diag("Building a test instance of PostgreSQL. Expect about one minute");
+diag("Do not pay attention to the error messages if the test passes");
 my $pgsql = Test::postgresql->new(
     postmaster_args => $Test::postgresql::Defaults{postmaster_args} . ' -c archive_mode=on -c archive_command=\'perl -I'.$test_lib_dir.' '.$script_file.' archivewal --file=%p --conf='.$tc_file.'\''
     )
