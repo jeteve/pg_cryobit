@@ -63,4 +63,18 @@ sub ship_xlog_file{
     copy($file,$self->xlog_dir().'/'.$basename) or die "Copy from $file to $destination failed: $!\n";
 }
 
+=head2 xlog_has_arrived
+
+See L<App::PgCryobit::Shipper>
+
+=cut
+
+sub xlog_has_arrived{
+    my ($self, $xlog_file) = @_;
+    if( -f $self->xlog_dir().'/'.$xlog_file ){
+	return 1;
+    }
+    return 0;
+}
+
 1;

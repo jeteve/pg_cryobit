@@ -4,6 +4,7 @@ author:
   - 'Jerome Eteve <jerome@eteve.net>'
 build_requires:
   ExtUtils::MakeMaker: 6.42
+  File::Spec: 0
   Test::Exception: 0
   Test::More: 0
   Test::postgresql: 0.09

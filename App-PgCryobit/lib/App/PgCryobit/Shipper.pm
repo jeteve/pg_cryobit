@@ -20,6 +20,29 @@ sub ship_xlog_file{
     die "Please implement ship_xlog_file in $self\n";
 }
 
+=head2 xlog_has_arrived
+
+Checks the given xlog_name has arrived at the safe destination. Return true or false.
+
+xlog_name is NOT an absolute file name, but something like '000000010000000000000000'.
+
+It's returned by the PostgreSQL admin function pg_xlogfile_name(location text).
+
+See http://www.postgresql.org/docs/8.2/static/functions-admin.html
+
+Usage:
+
+    if ( $this0->xlog_has_arrived('000000010000000000000000') ){
+    
+    }
+
+=cut
+
+sub xlog_has_arrived{
+    my ($self, $xlog_name) = @_;
+    die "Please implement xlog_has_arrived in $self\n";
+}
+
 =head2 ship_snapshot_file
 
 Copies the given snapshot_file somewhere safe.

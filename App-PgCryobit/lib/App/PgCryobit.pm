@@ -31,18 +31,21 @@ has 'shipper' => ( is => 'ro' , isa => 'App::PgCryobit::Shipper' , lazy_build =>
 
 ## The command line options. The script sets these.
 has 'options' => ( is => 'rw', isa => 'HashRef' , default => sub{ return {} } );
+has 'config_general' => ( is => 'rw' , isa => 'Config::General' );
 
 sub _build_configuration{
     my ($self) = @_;
     my %configuration;
     foreach my $path ( @{$self->config_paths()} ){
 	if( -f $path && -r $path ){
-	    %configuration = Config::General::ParseConfig($path);
+	    $self->config_general(Config::General->new($path));
+	    %configuration = $self->config_general->getall();
 	    $configuration{this_file} = $path;
 	    return \%configuration;
 	}
 	if( -d $path && -r $path.'/pg_cryobit.conf' ){
-	    %configuration = Config::General::ParseConfig($path.'/pg_cryobit.conf');
+	    $self->config_general(Config::General->new($path.'/pg_cryobit.conf'));
+	    %configuration = $self->config_general->getall();
 	    $configuration{this_file} = $path.'/pg_cryobit.conf';
 	    return \%configuration;
 	}
@@ -115,6 +118,12 @@ sub feature_checkconfig{
 	print STDERR "Cannot find current_xlogfile. Make sure your dsn connects to the DB as a super user in ".$conf->{this_file}."\n";
 	return 1;
     }
+    ## Check archive mode is ON
+    my ($archive_mode) = $dbh->selectrow_array('SHOW archive_mode');
+    unless( $archive_mode eq 'on' ){
+	print STDERR "archive_mode is NOT 'on' in database. Please fix that";
+	return 1;
+    }
 
     unless( $conf->{shipper} ){
 	print STDERR "Missing shipper section in".$conf->{this_file}."\n";
@@ -126,7 +135,7 @@ sub feature_checkconfig{
     }
     
     if( my $errcode = $self->feature_checkshipper() ){ return $errcode ;}
-
+    $dbh->disconnect();
     return 0;
 }
 
@@ -189,6 +198,46 @@ sub feature_archivewal{
     }
 
     return 0;
+}
+
+=head2 feature_rotatewal
+
+Assumes checkconfig has been called before.
+
+Will force the rotation of a wal and wait for its shipping to complete.
+
+=cut
+
+sub feature_rotatewal{
+    my ($self) = @_;
+    
+    my $dbh = DBI->connect($self->configuration->{dsn}, undef , undef , { RaiseError => 0 , PrintError => 0 });
+    my ($archive_command) = $dbh->selectrow_array('SHOW archive_command');
+
+    ## Perform some transactions so the forced rotation will actually rotate.
+    $dbh->do('DROP TABLE IF EXISTS to_force_rotation');
+    $dbh->do('CREATE TABLE to_force_rotation (id TEXT)');
+    $dbh->do('INSERT INTO force_rotation(id) VALUES(\'Blablabla\')');
+    $dbh->do('DROP TABLE to_force_rotation');
+
+    my ($shipped_log) = $dbh->selectrow_array('SELECT pg_xlogfile_name(pg_switch_xlog())');
+    print STDERR "PostgreSQL will ship file $shipped_log using archive_command $archive_command\n";
+
+    ## The check that this has arrived.
+    my $shipper = $self->shipper();
+    
+    my $time_spend_waiting = 0;
+    while( $time_spend_waiting < 60 ){
+	if( $shipper->xlog_has_arrived($shipped_log) ){
+	    return 0;
+	}
+	sleep(10);
+	$time_spend_waiting += 10;
+    }
+    
+    print STDERR "File $shipped_log is not arrived after we waited for $time_spend_waiting seconds\n";
+    print STDERR "Check your PostgreSQL logs\n";
+    return 1;
 }
 
 =head1 AUTHOR

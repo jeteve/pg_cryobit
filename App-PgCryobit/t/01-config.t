@@ -10,9 +10,16 @@ BEGIN {
 ";
 }
 
+my $script_file = File::Spec->rel2abs( './script/pg_cryobit' ) ;
+unless( -f $script_file && -x $script_file ){
+    BAIL_OUT($script_file." is not executable or does not exists");
+}
+
 my $temp_backup_dir = File::Temp::tempdir(CLEANUP =>1);
 diag("Building a test instance of PostgreSQL. This will take a while");
-my $pgsql = Test::postgresql->new()
+my $pgsql = Test::postgresql->new(
+    postmaster_args => $Test::postgresql::Defaults{postmaster_args} . ' -c archive_mode=on -c archive_command=\''.$script_file.' archivewal --file=%p \''
+    )
     or plan skip_all => $Test::postgresql::errstr;
 
 

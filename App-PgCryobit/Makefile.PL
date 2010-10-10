@@ -20,7 +20,7 @@ requires_external_bin 'pg_ctlcluster';
 build_requires 'Test::More';
 build_requires 'Test::Exception';
 build_requires 'Test::postgresql' => 0.09;
-
+build_requires 'File::Spec';
 auto_install;
 
 WriteAll;
