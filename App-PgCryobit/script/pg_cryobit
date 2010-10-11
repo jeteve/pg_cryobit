@@ -106,4 +106,24 @@ Remove anything earlier than the last archivesnapshot. Applies to archivesnapsho
 
 =back
 
+=head2 CONFIGURATION
+
+If no --conf option is given, pg_cryobit looks for a pg_cryobit.conf file in the following directories:
+
+ The current directory
+
+ Your HOME directory (HOME is defined)
+
+ Your system's /etc directory.
+
+=head2 SEE ALSO
+
+perldoc App::PgCryobit
+
+=head2 COPYRIGHT AND LICENSE
+
+Copyright 2010 by Jerome Eteve.
+
+This is free software; you can redistribute it and/or modify it under the same terms as Perl itself.
+
 =cut
