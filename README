@@ -13,12 +13,15 @@ HOW TO INSTALL AND USE:
 
 $ cpan -i App::PgCryobit
 
-1 - Write a configuration file. /etc/pg_cryobit.conf.example provides an example. It should be self explanatory.
+1 - Write a configuration file and put it in your /etc/.
+
+App-PgCryobit/conf_example/pg_cryobit.conf from the distribution archive provides an example. it should be self explanatory.
 
 2 - In your postgresql.conf, set your PostgeSQL server so it uses pg_cryobit as an archive command.
 
 It can be as simple as this:
 
+archive_mode = on
 archive_command = 'pg_cryobit archivewal --file=%p'
 
 3 - Restart your PostgreSQL server and test your configuration:
