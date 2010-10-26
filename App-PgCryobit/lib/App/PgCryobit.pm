@@ -22,7 +22,7 @@ by the pg_cryobit command.
 
 =cut
 
-our $VERSION = '0.01_02';
+our $VERSION = '0.01';
 
 has 'config_paths' => ( is => 'ro' , isa => 'ArrayRef', required =>  1);
 has 'configuration' => ( is => 'ro' , isa => 'HashRef' , lazy_build => 1 ); 
