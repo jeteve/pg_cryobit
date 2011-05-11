@@ -110,11 +110,11 @@ Remove anything earlier than the last archivesnapshot. Applies to archivesnapsho
 
 If no --conf option is given, pg_cryobit looks for a pg_cryobit.conf file in the following directories:
 
- The current directory
+- The current directory
 
- Your HOME directory (HOME is defined)
+- Your HOME directory (HOME is defined)
 
- Your system's /etc directory.
+- Your system /etc directory.
 
 =head2 SEE ALSO
 

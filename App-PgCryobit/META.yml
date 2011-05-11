@@ -6,7 +6,9 @@ build_requires:
   ExtUtils::MakeMaker: 6.42
   File::Spec: 0
   Test::Exception: 0
+  Test::FTP::Server: 0.012
   Test::More: 0
+  Test::TCP: 0.16
   Test::postgresql: 0.09
 configure_requires:
   ExtUtils::MakeMaker: 6.42
@@ -29,7 +31,8 @@ requires:
   File::Temp: 0
   Getopt::Long: 2.37
   Moose: 0.94
+  Net::FTP: 2.77
   Pod::Usage: 1.35
 resources:
   license: http://dev.perl.org/licenses/
-version: 0.01_02
+version: 0.01

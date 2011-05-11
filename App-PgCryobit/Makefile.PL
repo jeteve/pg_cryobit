@@ -14,6 +14,7 @@ requires 'Getopt::Long' => 2.37;
 requires 'File::Copy' => 2.11;
 requires 'File::Basename' => 2.76;
 requires 'File::Temp';
+requires 'Net::FTP' => 2.77;
 
 ## This module is to be used only on a PostgreSQL fitted box
 requires_external_bin 'pg_ctlcluster';
@@ -23,6 +24,8 @@ build_requires 'Test::More';
 build_requires 'Test::Exception';
 build_requires 'Test::postgresql' => 0.09;
 build_requires 'File::Spec';
+build_requires 'Test::TCP' => 0.16;
+build_requires 'Test::FTP::Server' => 0.012;
 auto_install;
 
 WriteAll;
