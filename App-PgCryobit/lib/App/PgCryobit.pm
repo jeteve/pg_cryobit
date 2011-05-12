@@ -296,7 +296,7 @@ sub feature_archivesnapshot{
     eval{
       # Prefix archive name with configuration 'snapshooting_dir' or current dir
       $archive_full_file = ( $self->configuration->{snapshooting_dir} || './' ).$archive_name;
-      my $cmd = 'tar -cvzhf '.$archive_full_file.' '.$self->configuration->{data_directory};
+      my $cmd = 'tar -czhf '.$archive_full_file.' '.$self->configuration->{data_directory};
       my $tar_ret = system($cmd);
       if( $tar_ret != 0 ){
 	die "Archiving command $cmd has failed\n";
