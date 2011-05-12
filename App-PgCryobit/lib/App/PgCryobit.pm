@@ -57,13 +57,17 @@ sub _build_shipper{
     my ($self) = @_;
     my $shipper_factory;
     my $factory_class = $self->configuration->{shipper}->{plugin};
+
+    my $load_err;
     eval{ $shipper_factory = Class::MOP::load_class($factory_class) };
+    $load_err = $@;
     unless( $shipper_factory ){
-	$factory_class = 'App::PgCryobit::ShipperFactory::'.$factory_class;
-	eval{ $shipper_factory = Class::MOP::load_class($factory_class) };
+      $factory_class = 'App::PgCryobit::ShipperFactory::'.$factory_class;
+      eval{ $shipper_factory = Class::MOP::load_class($factory_class) };
+      $load_err = $@;
     }
     unless( $shipper_factory ){
-	die "Cannot load factory plugin ".$factory_class.".\n  * If this class is known to exists, try loading it with perl -M$factory_class\n";
+      die "Cannot load factory plugin ".$factory_class.": $load_err.\n  * If this class is known to exists, try loading it with perl -M$factory_class\n";
     }
     return $factory_class->new( { config => $self->configuration->{shipper} } )->build_shipper();
 }
