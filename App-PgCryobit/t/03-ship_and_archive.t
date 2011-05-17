@@ -24,10 +24,25 @@ my ( $tc_fh , $tc_file ) = File::Temp::tempfile();
 
 diag("Building a test instance of PostgreSQL. Expect about one minute");
 diag("Do not pay attention to the error messages if the test passes");
-my $pgsql = Test::postgresql->new(
-    postmaster_args => $Test::postgresql::Defaults{postmaster_args} . ' -c archive_mode=on -c archive_command=\'perl -I'.$test_lib_dir.' '.$script_file.' archivewal --file=%p --conf='.$tc_file.'\''
-    )
-    or plan skip_all => $Test::postgresql::errstr;
+
+my $pgsql;
+
+my $pg_args = ' -c archive_mode=on -c archive_command=\'perl -I'.$test_lib_dir.' '.$script_file.' archivewal --file=%p --conf='.$tc_file.'\'';
+
+
+eval{
+  $pgsql = Test::postgresql->new(
+                                 postmaster_args => $Test::postgresql::Defaults{postmaster_args} .$pg_args
+                                );
+};
+if ( $@ ) {
+  diag("Failed to build postgresql without wal_level. Trying with it.");
+  $pgsql = Test::postgresql->new(
+                                 postmaster_args => $Test::postgresql::Defaults{postmaster_args} . ' -c wal_level=archive ' . $pg_args
+                                );
+}
+
+$pgsql or plan skip_all => $Test::postgresql::errstr;
 
 
 ## Try the same thing with a file path
