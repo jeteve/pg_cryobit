@@ -35,4 +35,4 @@ requires:
   Pod::Usage: 1.35
 resources:
   license: http://dev.perl.org/licenses/
-version: 0.02_01
+version: 0.02_03
