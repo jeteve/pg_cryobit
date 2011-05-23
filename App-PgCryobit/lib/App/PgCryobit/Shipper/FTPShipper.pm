@@ -66,11 +66,8 @@ sub _ensure_subdir{
   my $do_stuff =
     sub{
         my $ftp = shift;
-        ## Check if logdir is there
-        if ( $ftp->ls($sub_dir)) {
-          return $sub_dir;
-        }
-        ## Try to make this dir
+        ## We always issue a mkdir command.
+        ## It is harmful if the directory exists.
         my $new_dir = $ftp->mkdir($sub_dir , 'RECURSE') or die "Cannot create $sub_dir";
         return $sub_dir;
        };
@@ -111,6 +108,14 @@ sub check_config{
   $ftp->rmdir('check_config_test')
     or die "Cannot destroy test directory :".$ftp->message."\n";
 
+  unless ( $self->xlog_dir() ) {
+    die "Cannot make xlog_dir";
+  }
+
+  unless ( $self->snapshot_dir() ) {
+    die "Cannot make snapshot_dir";
+  }
+
   return 0;
 }
 
@@ -133,7 +138,7 @@ sub _ship_file{
           ## Issue a delete. In case the transfer failed
                              ## in the middle.
           $ftp->delete($destination);
-          die "Copy from $file to $destination failed:".$ftp->message();
+          die "Copy from $file to $destination failed:".$message;
         }
         return $remote_name;
        };
@@ -191,7 +196,11 @@ sub _clean_files_youngerthan{
         ## List files in basedir
         my $list = $ftp->ls($base_dir) or die "Cannot list $base_dir on ".$self->ftp_host.' : '.$ftp->message();
         foreach my $candidate ( @{$list} ) {
-          if ( $candidate lt $file ) {
+          if ( $candidate =~ /\.$/ ) {
+            ## skip anything ending with a .
+            next;
+          }
+          if ( basename($candidate) lt $file ) {
             $ftp->delete($base_dir.'/'.$candidate) or die "Cannot delete $base_dir/$candidate:".$ftp->message();
           }
         }
