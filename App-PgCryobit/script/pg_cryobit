@@ -60,6 +60,8 @@ pg_cryobit - Manage PostgreSQL continuous backup
 
 pg_cryobit help|man|checkconfig|archivewal|rotatewal|archivesnapshot|fullarchive [options]
 
+This is pg_cryobit v.02 - Copyright Jerome Eteve 2010-2011
+
 =head1 OPTIONS
 
 =head2 COMMANDS
@@ -160,7 +162,7 @@ perldoc App::PgCryobit
 
 =head2 COPYRIGHT AND LICENSE
 
-Copyright 2010 by Jerome Eteve.
+Copyright 2010-11 by Jerome Eteve.
 
 This is free software; you can redistribute it and/or modify it under the same terms as Perl itself.
 

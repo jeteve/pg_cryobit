@@ -11,7 +11,7 @@ App::PgCryobit - The pg_cryobit application
 
 =head1 VERSION
 
-Version 0.02_01
+Version 0.02_02
 
 =head1 SYNOPSIS
 
@@ -22,7 +22,7 @@ by the pg_cryobit command.
 
 =cut
 
-our $VERSION = '0.02_01';
+our $VERSION = '0.02_02';
 
 has 'config_paths' => ( is => 'ro' , isa => 'ArrayRef', required =>  1);
 has 'configuration' => ( is => 'ro' , isa => 'HashRef' , lazy_build => 1 ); 
