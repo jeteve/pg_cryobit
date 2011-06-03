@@ -13,9 +13,7 @@ HOW TO INSTALL AND USE:
 
 $ cpan -i App::PgCryobit
 
-1 - Write a configuration file and put it in your /etc/.
-
-App-PgCryobit/conf_example/pg_cryobit.conf from the distribution archive provides an example. it should be self explanatory.
+1 - Write a pg_cryobit.conf configuration file and put it in your current directory, $HOME, or /etc/. See CONFIGURATION section.
 
 2 - In your postgresql.conf, set your PostgeSQL server so it uses pg_cryobit as an archive command.
 
@@ -36,6 +34,17 @@ $ pg_cryobit archivesnapshot
 
 5 - Job done.
 
-HOW TO EXTEND:
+CONFIGURATION
+-------------
+
+The pg_cryobit repository contains configuration file examples:
+
+https://github.com/jeteve/pg_cryobit/tree/master/App-PgCryobit/conf_example
+
+Have a look there and file support tickets if they're not clear enough :)
+
+
+HOW TO EXTEND
+-------------
 
 $ perldoc App::PgCryobit::ShipperFactory will tell you.

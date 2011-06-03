@@ -1,5 +1,6 @@
 Changes
 conf_example/pg_cryobit.conf
+conf_example/pg_cryobit_ftp.conf
 conf_test/pg_cryobit.conf
 conf_test/pg_cryobit_faulty.conf
 conf_test/pg_cryobit_faulty2.conf

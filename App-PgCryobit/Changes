@@ -1,5 +1,9 @@
 Revision history for App-PgCryobit
 
+0.02    2011-06-03
+        Added FTP Shipper
+        Better doc.
+
 0.01    2010-10-11
         First minimal working version.
 
