@@ -20,7 +20,7 @@ my $temp_backup_dir = File::Temp::tempdir(CLEANUP =>1);
 my $temp_snapshooting_dir = File::Temp::tempdir(CLEANUP =>1);
 ## This temporary configuration file will hold the correct configuration
 ## within this test postgresql instance.
-my ( $tc_fh , $tc_file ) = File::Temp::tempfile();
+my ( $tc_fh , $tc_file ) = File::Temp::tempfile(CLEANUP => 1);
 
 diag("Building a test instance of PostgreSQL. Expect about one minute");
 diag("Do not pay attention to the error messages if the test passes");
@@ -36,7 +36,8 @@ eval{
                                 );
 };
 if ( $@ ) {
-  diag("Failed to build postgresql without wal_level. Trying with it.");
+  diag(q|Failed to build postgresql without wal_level. Trying with it.
+It is fine if you are using Postgresql 9.*|);
   $pgsql = Test::postgresql->new(
                                  postmaster_args => $Test::postgresql::Defaults{postmaster_args} . ' -c wal_level=archive ' . $pg_args
                                 );

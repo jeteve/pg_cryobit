@@ -25,7 +25,7 @@ by the pg_cryobit command.
 our $VERSION = '0.02';
 
 has 'config_paths' => ( is => 'ro' , isa => 'ArrayRef', required =>  1);
-has 'configuration' => ( is => 'ro' , isa => 'HashRef' , lazy_build => 1 ); 
+has 'configuration' => ( is => 'ro' , isa => 'HashRef' , lazy_build => 1 );
 
 has 'shipper' => ( is => 'ro' , isa => 'App::PgCryobit::Shipper' , lazy_build => 1);
 
