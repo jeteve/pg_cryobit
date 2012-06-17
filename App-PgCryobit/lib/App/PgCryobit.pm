@@ -4,6 +4,7 @@ use Moose;
 use Config::General;
 use File::Temp;
 use DBI;
+use Log::Log4perl;
 
 =head1 NAME
 
@@ -33,24 +34,29 @@ has 'shipper' => ( is => 'ro' , isa => 'App::PgCryobit::Shipper' , lazy_build =>
 has 'options' => ( is => 'rw', isa => 'HashRef' , default => sub{ return {} } );
 has 'config_general' => ( is => 'rw' , isa => 'Config::General' );
 
+my $LOGGER = Log::Log4perl->get_logger();
+
 sub _build_configuration{
-    my ($self) = @_;
-    my %configuration;
-    foreach my $path ( @{$self->config_paths()} ){
-	if( -f $path && -r $path ){
-	    $self->config_general(Config::General->new($path));
-	    %configuration = $self->config_general->getall();
-	    $configuration{this_file} = $path;
-	    return \%configuration;
-	}
-	if( -d $path && -r $path.'/pg_cryobit.conf' ){
-	    $self->config_general(Config::General->new($path.'/pg_cryobit.conf'));
-	    %configuration = $self->config_general->getall();
-	    $configuration{this_file} = $path.'/pg_cryobit.conf';
-	    return \%configuration;
-	}
+  my ($self) = @_;
+  my %configuration;
+  foreach my $path ( @{$self->config_paths()} ){
+    $LOGGER->debug("Looking for config file in $path");
+    if( -f $path && -r $path ){
+      $LOGGER->info("Found config file $path");
+      $self->config_general(Config::General->new($path));
+      %configuration = $self->config_general->getall();
+      $configuration{this_file} = $path;
+      return \%configuration;
     }
-    die "No pg_cryobit.conf could be found in paths ".join(':',@{$self->config_paths()}); 
+    if( -d $path && -r $path.'/pg_cryobit.conf' ){
+      $LOGGER->info("Found pg_cryobit.conf in $path");
+      $self->config_general(Config::General->new($path.'/pg_cryobit.conf'));
+      %configuration = $self->config_general->getall();
+      $configuration{this_file} = $path.'/pg_cryobit.conf';
+      return \%configuration;
+    }
+  }
+  die "No pg_cryobit.conf could be found in paths ".join(':',@{$self->config_paths()});
 }
 
 sub _build_shipper{
@@ -58,6 +64,7 @@ sub _build_shipper{
     my $shipper_factory;
     my $factory_class = $self->configuration->{shipper}->{plugin};
 
+    $LOGGER->info("Loading shipper factory class $factory_class");
     my $load_err;
     eval{ $shipper_factory = Class::MOP::load_class($factory_class) };
     $load_err = $@;
@@ -83,71 +90,70 @@ Returns 0 if everything went fine.
 
 sub feature_checkconfig{
     my ($self) = @_;
-    
     my $conf;
     eval{
-	$conf = $self->configuration();
+      $conf = $self->configuration();
     };
     if( $@ ){
-	print STDERR $@;
-	return 1;
+      $LOGGER->error("Cannot get configuration:$@");
+      return 1;
     }
 
     ## Structural and functional checking.
     unless( $conf->{data_directory} ){
-	print STDERR "Missing data_directory in ".$conf->{this_file}."\n";
-	return 1;
+      $LOGGER->error("Missing data_directory in ".$conf->{this_file});
+      return 1;
     }
     ## Check this data_directory can be read
     ## This is useful for full archive
     unless(( -d $conf->{data_directory} ) && ( -r $conf->{data_directory} )){
-	print STDERR "Cannot read directory ".$conf->{data_directory}." (defined in ".$conf->{this_file}.")\n";
-	return 1;
+      $LOGGER->error("Cannot read directory ".$conf->{data_directory}." (defined in ".$conf->{this_file}.")");
+      return 1;
     }
 
     if ( $conf->{snapshooting_dir} ){
       unless( ( -d $conf->{snapshooting_dir} ) && ( -w $conf->{snapshooting_dir} ) ){
-	print STDERR "Cannot access ".$conf->{snapshooting_dir}." in Write mode (defined in ".$conf->{this_file}.")\n";
+	$LOGGER->error("Cannot access ".$conf->{snapshooting_dir}." in Write mode (defined in ".$conf->{this_file}.")");
 	return 1;
       }
     }
 
     unless( $conf->{dsn} ){
-	print STDERR "Missing dsn in ".$conf->{this_file}."\n";
-	return 1;
+      $LOGGER->error("Missing dsn in ".$conf->{this_file});
+      return 1;
     }
 
     ## Check we can connect using the dsn
     my $dbh = DBI->connect($conf->{dsn}, undef , undef , { RaiseError => 0 , PrintError => 0 });
     unless( $dbh ){
-	print STDERR "Cannot connect to ".$conf->{dsn}." defined in ".$conf->{this_file}."\n";
-	return 1;
+      $LOGGER->error("Cannot connect to ".$conf->{dsn}." defined in ".$conf->{this_file});
+      return 1;
     }
     ## Check we can call some xlog administrative functions
     my ($current_xlogfile) = $dbh->selectrow_array('SELECT pg_xlogfile_name(pg_current_xlog_location())');
     unless( $current_xlogfile ){
-	print STDERR "Cannot find current_xlogfile. Make sure your dsn connects to the DB as a super user in ".$conf->{this_file}."\n";
-	return 1;
+      $LOGGER->error("Cannot find current_xlogfile. Make sure your dsn connects to the DB as a super user in ".$conf->{this_file});
+      return 1;
     }
     ## Check archive mode is ON
     my ($archive_mode) = $dbh->selectrow_array('SHOW archive_mode');
     unless( $archive_mode eq 'on' ){
-	print STDERR "archive_mode is NOT 'on' in database. Please fix that\n";
-	return 1;
+      $LOGGER->error("archive_mode is NOT 'on' in database. Please fix that");
+      return 1;
     }
     my ($archive_command) = $dbh->selectrow_array('SHOW archive_command');
     unless( $archive_command =~ /pg_cryobit/ ){
-	print STDERR "archive_command (=$archive_command) does NOT make use of pg_cryobit. Please fix that\n";
-	return 1;
+      $LOGGER->error("archive_command (=$archive_command) does NOT use of pg_cryobit. Please fix that");
+      return 1;
     }
 
     unless( $conf->{shipper} ){
-	print STDERR "Missing shipper section in".$conf->{this_file}."\n";
-	return 1;
+      $LOGGER->error("Missing shipper section in".$conf->{this_file});
+      return 1;
     }
     unless( $conf->{shipper}->{plugin} ){
-	print STDERR "Missing plugin class definition in shipper in ".$conf->{this_file}."\n";
-	return 1;
+      $LOGGER->error("Missing plugin class definition in shipper in ".$conf->{this_file});
+      return 1;
     }
 
     if( my $errcode = $self->feature_checkshipper() ){ return $errcode ;}
@@ -168,15 +174,15 @@ sub feature_checkshipper{
     my $shipper;
     eval{ $shipper = $self->shipper(); };
     if( $@ ){
-	print STDERR $@;
-	return 1;
+      $LOGGER->error("Cannot get shipper: $@");
+      return 1;
     }
     eval{
 	$shipper->check_config();
     };
     if ( $@ ){
-	print STDERR $@;
-	return 1;
+      $LOGGER->error("Shipper config check failed:$@");
+      return 1;
     }
     return 0;
 }
@@ -195,22 +201,22 @@ See man pg_cryobit for more info.
 sub feature_archivewal{
     my ($self) = @_;
     unless( $self->options()->{file} ){
-	print STDERR "Missing options 'file'\n";
-	return 1;
+      $LOGGER->error("Missing options 'file'");
+      return 1;
     }
     my $file = $self->options()->{file} ;
     unless( -f $file && -r $file ){
-	print STDERR "Cannot read file ".$file."\n";
-	return 1;
+      $LOGGER->error("Cannot read file ".$file);
+      return 1;
     }
 
     my $shipper = $self->shipper();
     eval{
-	$shipper->ship_xlog_file($file);
+      $shipper->ship_xlog_file($file);
     };
     if( $@ ){
-	print STDERR "ERROR SHIPPING FILE: $@\n";
-	return 1;
+      $LOGGER->error("ERROR SHIPPING FILE: $@");
+      return 1;
     }
 
     return 0;
@@ -254,7 +260,7 @@ sub feature_rotatewal{
     $dbh->do('DROP TABLE pg_cryobit_to_force_rotation');
 
     my ($shipped_log) = $dbh->selectrow_array('SELECT pg_xlogfile_name(pg_switch_xlog())');
-    print STDERR "PostgreSQL will attempt to ship file $shipped_log using archive_command $archive_command\n";
+    $LOGGER->info("PostgreSQL will attempt to ship file $shipped_log using archive_command $archive_command");
     $dbh->disconnect();
 
     ## The check that this has arrived.
@@ -264,14 +270,14 @@ sub feature_rotatewal{
     sleep(1);
     while( $time_spend_waiting < 60 ){
 	if( $shipper->xlog_has_arrived($shipped_log) ){
-	    return 0;
+          $LOGGER->info("Shipped Log file $shipped_log has arrived.");
+          return 0;
 	}
 	sleep(10);
 	$time_spend_waiting += 10;
     }
 
-    print STDERR "File $shipped_log is not arrived after we waited for $time_spend_waiting seconds\n";
-    print STDERR "Check your PostgreSQL logs\n";
+    $LOGGER->error(qq|File $shipped_log is not arrived after we waited for $time_spend_waiting seconds. Please check your PostgreSQL logs|);
     return 1;
 }
 
@@ -291,7 +297,7 @@ sub feature_archivesnapshot{
     my ($archive_row) = $dbh->selectrow_array('SELECT pg_xlogfile_name_offset(pg_start_backup('.$dbh->quote($archive_name).'))');
     my ($archived_wal,$archived_offset) = ( $archive_row =~ /\((\w+?),(\w+?)\)/ );
     unless( $archived_wal && $archived_offset ){
-	print STDERR "Cannot parse wal and offet from $archive_row\n";
+	$LOGGER->error("Cannot parse wal and offet from $archive_row");
 	return 1;
     }
     $archived_offset = sprintf("%08x", $archived_offset);
@@ -308,7 +314,7 @@ sub feature_archivesnapshot{
     };
     if ( $@ ){
 	$dbh->selectrow_array('SELECT  pg_xlogfile_name_offset( pg_stop_backup())');
-	print STDERR "CRASH in building the main archive: $@\n";
+	$LOGGER->error("CRASH in building the main archive: $@");
 	return 1;
     }
     my ($end_archived_row) = $dbh->selectrow_array('SELECT  pg_xlogfile_name_offset( pg_stop_backup())');
@@ -320,7 +326,7 @@ sub feature_archivesnapshot{
 	$shipper->ship_snapshot_file($archive_full_file);
     };
     if( $@ ){
-	print STDERR "Error shipping $archive_name : $@\n";
+	$LOGGER->error("Error shipping $archive_name : $@");
 	return 1;
     }
     ## Wait for archive_wal.archive_offset.backup to be shipped.
@@ -335,21 +341,21 @@ sub feature_archivesnapshot{
 	$time_spend_waiting += 10;
     }
     if( $time_spend_waiting ){
-	print STDERR "$archived_wal and $archived_wal.$archived_offset.backup are not shipped after $time_spend_waiting seconds\n";
+	$LOGGER->error("$archived_wal and $archived_wal.$archived_offset.backup are not shipped after $time_spend_waiting seconds");
 	return 1;
     }
 
     if( $self->options()->{deepclean} ){
-      print STDERR "Will perform a deep clean\n";
+      $LOGGER->info("Will perform a deep clean");
       ## Deepcleaning has been requested
       eval{
-	print STDERR "Cleaning wal logs younger than $archived_wal\n";
+	$LOGGER->info("Cleaning wal logs younger than $archived_wal");
 	$shipper->clean_xlogs_youngerthan($archived_wal);
-	print STDERR "Cleaning archives snapshots younger than $archive_name\n";
+	$LOGGER->info("Cleaning archives snapshots younger than $archive_name");
 	$shipper->clean_archives_youngerthan($archive_name);
       };
       if( $@ ){
-	print STDERR "Cannot perform deepclean : $@\n";
+	$LOGGER->error("Cannot perform deepclean : $@");
 	return 1;
       }
     } ## end of if deepclean

@@ -3,7 +3,10 @@ use strict;
 use Getopt::Long qw/GetOptionsFromArray/;
 use Pod::Usage;
 use App::PgCryobit;
+use Log::Log4perl qw/:easy/;
 
+## First log init (before the real thing):
+Log::Log4perl->easy_init($TRACE);
 
 my @config_paths =  ('pg_cryobit.conf',
 		     ( $ENV{HOME} // '.' ).'/pg_cryobit.conf',
@@ -17,17 +20,35 @@ my $COMMAND = shift @OPTIONS_ARRAY if ( @OPTIONS_ARRAY &&  ( $OPTIONS_ARRAY[0] !
 
 my $opts_result = 
   GetOptionsFromArray(
-	     \@OPTIONS_ARRAY,
-	     \%OPTIONS_HASH,
-	     "conf=s",
-	     "file=s",
-	     "deepclean",
-	    );
+                      \@OPTIONS_ARRAY,
+                      \%OPTIONS_HASH,
+                      "conf=s",
+                      "file=s",
+                      "deepclean",
+                      "quiet",
+                      "verbose=s"
+                     );
 
 ## Deal with help and exit
 pod2usage(1) unless $COMMAND;
 pod2usage(1) if $COMMAND eq 'help' ;
 pod2usage(-exitstatus => 0, -verbose => 2) if $COMMAND eq 'man';
+
+my $log_level = $OPTIONS_HASH{verbose} || 'INFO';
+if( $OPTIONS_HASH{quiet} ){
+  $log_level = 'ERROR';
+}
+
+unless( $log_level =~ /^(TRACE|DEBUG|INFO|WARN|ERROR|FATAL)$/ ){
+  WARN("Specified log level $log_level is invalid. Falling back to default INFO");
+  $log_level = 'INFO';
+}
+
+## We know the log level.
+Log::Log4perl->easy_init({ level => $log_level,
+                           layout => '%-5p - %m%n'
+                         });
+
 
 
 if ( $OPTIONS_HASH{conf} ){
@@ -60,7 +81,7 @@ pg_cryobit - Manage PostgreSQL continuous backup
 
 pg_cryobit help|man|checkconfig|archivewal|rotatewal|archivesnapshot|fullarchive [options]
 
-This is pg_cryobit v.02 - Copyright Jerome Eteve 2010-2011
+This is pg_cryobit v.03 - Copyright Jerome Eteve 2010-2012
 
 =head1 OPTIONS
 
@@ -105,6 +126,14 @@ Specify file to handle. Applies to archivewal
 =item --deepclean
 
 Remove anything earlier than the last archivesnapshot. Applies to archivesnapshot
+
+=item --quiet
+
+Same as --verbose=ERROR
+
+=item --verbose=(TRACE|DEBUG|INFO|WARN|ERROR|FATAL)
+
+Sets the verbosity level. Default is INFO. You probably want to avoid using FATAL only.
 
 =back
 

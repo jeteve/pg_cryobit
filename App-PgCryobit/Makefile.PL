@@ -15,6 +15,7 @@ requires 'File::Copy' => 2.11;
 requires 'File::Basename' => 2.76;
 requires 'File::Temp';
 requires 'Net::FTP' => 2.77;
+requires 'Log::Log4perl' => 1.29;
 
 ## This module is to be used only on a PostgreSQL fitted box
 requires_external_bin 'pg_ctlcluster';

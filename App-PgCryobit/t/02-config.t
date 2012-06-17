@@ -4,6 +4,8 @@ use Test::More tests => 24;
 use Test::Exception;
 use Test::postgresql;
 use File::Temp;
+use Log::Log4perl qw/:easy/;
+Log::Log4perl->easy_init($DEBUG);
 
 BEGIN {
     use_ok( 'App::PgCryobit' ) || print "Bail out!

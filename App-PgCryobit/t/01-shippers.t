@@ -10,6 +10,12 @@ use Test::TCP;
 use App::PgCryobit::Shipper::FTPShipper;
 use App::PgCryobit::Shipper::CopyShipper;
 
+use Log::Log4perl qw/:easy/;
+Log::Log4perl->easy_init({ level => $DEBUG,
+                           layout => '%-5p - %m%n'
+                         });
+
+
 my $user = 'dale';
 my $pass = 'cooper';
 my $sandbox_base = File::Temp::tempdir( DIR => 't/remote_ftp' , CLEANUP => 1 );

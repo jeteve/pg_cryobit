@@ -1,5 +1,6 @@
 package App::PgCryobit::Shipper::CopyShipper;
 use Moose;
+use Log::Log4perl;
 extends qw/App::PgCryobit::Shipper/;
 
 use File::Copy;
@@ -8,6 +9,8 @@ use File::Basename;
 has 'backup_dir' => ( is => 'ro' , isa => 'Str' , required => 1 );
 has 'xlog_dir' => ( is => 'ro' , isa => 'Str' , lazy_build => 1 );
 has 'snapshot_dir' => ( is => 'ro', isa => 'Str', lazy_build => 1);
+
+my $LOGGER = Log::Log4perl->get_logger();
 
 sub _build_xlog_dir{
     my ($self) = @_;
@@ -51,6 +54,7 @@ See L<App::PgCryobit::Shipper>
 
 sub check_config{
     my ($self) = @_;
+    $LOGGER->debug("Checking backup directory ".$self->backup_dir());
     unless( -d $self->backup_dir() ){
 	die $self->backup_dir()." is NOT a directory\n";
     }
@@ -68,14 +72,14 @@ See L<App::PgCryobit::Shipper>
 
 sub ship_xlog_file{
     my ($self , $file) = @_;
-    
     my $basename = basename($file);
     my $destination = $self->xlog_dir().'/'.$basename;
     if ( -f $destination ){
 	die "Destination file $destination already exists for copying $file\n";
     }
     # Copy the file to the basename
-    copy($file,$self->xlog_dir().'/'.$basename) or die "Copy from $file to $destination failed: $!\n";
+    $LOGGER->info("Copying log file '$file' to '$destination'");
+    copy($file,$destination) or die "Copy from $file to $destination failed: $!\n";
 }
 
 =head2 ship_snapshot_file
@@ -92,6 +96,7 @@ sub ship_snapshot_file{
 	die "Destination file $destination already exists for copying $file\n";
     }
     # Copy the file to the basename
+    $LOGGER->info("Copying snapshot file '$file' to '$destination'");
     copy($file,$destination) or die "Copy from $file to $destination failed: $!\n";
 }
 
@@ -103,8 +108,9 @@ See L<App::PgCryobit::Shipper>
 
 sub xlog_has_arrived{
     my ($self, $xlog_file) = @_;
+    $LOGGER->debug("Testing if $xlog_file exists");
     if( -f $self->xlog_dir().'/'.$xlog_file ){
-	return 1;
+      return 1;
     }
     return 0;
 }
@@ -117,10 +123,12 @@ See L<App::PgCryobit::Shipper>
 
 sub clean_xlogs_youngerthan{
     my ($self, $file) = @_;
+    $LOGGER->info("Cleaning up xlog files younger than $file");
     my @candidates = glob $self->xlog_dir().'/*';
     foreach my $candidate ( @candidates ){
 	if ( basename($candidate) lt $file ){
-	    unlink $candidate or die "Cannot remove $candidate: $!\n";
+          $LOGGER->debug("Unlinking $candidate");
+          unlink $candidate or die "Cannot remove $candidate: $!\n";
 	}
     }
 }
@@ -132,13 +140,15 @@ See L<App::PgCryobit::Shipper>
 =cut
 
 sub clean_archives_youngerthan{
-    my ($self, $file) = @_;
-    my @candidates = glob $self->snapshot_dir().'/*';
-    foreach my $candidate ( @candidates ){
-	if ( basename($candidate) lt $file ){
-	    unlink $candidate or die "Cannot remove $candidate: $!\n";
-	}
+  my ($self, $file) = @_;
+  $LOGGER->info("Cleaning up archive file younger than $file");
+  my @candidates = glob $self->snapshot_dir().'/*';
+  foreach my $candidate ( @candidates ){
+    if ( basename($candidate) lt $file ){
+      $LOGGER->debug("Unlinking $candidate");
+      unlink $candidate or die "Cannot remove $candidate: $!\n";
     }
+  }
 }
 
 

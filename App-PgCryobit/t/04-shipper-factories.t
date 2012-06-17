@@ -5,6 +5,8 @@ use Test::Exception;
 
 use App::PgCryobit::ShipperFactory::CopyFactory;
 use App::PgCryobit::ShipperFactory::FTPFactory;
+use Log::Log4perl qw/:easy/;
+Log::Log4perl->easy_init($DEBUG);
 
 my %CONFIGS = (
                'App::PgCryobit::ShipperFactory::CopyFactory' => { backup_dir => '/nonexisting/' },
