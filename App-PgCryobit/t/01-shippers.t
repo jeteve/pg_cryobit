@@ -9,6 +9,7 @@ use Test::TCP;
 
 use App::PgCryobit::Shipper::FTPShipper;
 use App::PgCryobit::Shipper::CopyShipper;
+use App::PgCryobit::Shipper::MultiShipper;
 
 use Log::Log4perl qw/:easy/;
 Log::Log4perl->easy_init({ level => $DEBUG,
@@ -58,26 +59,43 @@ test_tcp
                  backup_dir => $copy_save_dir
                 });
 
-          foreach my $shipper ( $ftp_shipper , $copy_shipper ) {
+          my $multi_shipper1 = App::PgCryobit::Shipper::MultiShipper
+            ->new( { shippers => [ $ftp_shipper , $copy_shipper ] });
 
+          my $multi_shipper2 = App::PgCryobit::Shipper::MultiShipper
+            ->new( { shippers => [ $copy_shipper , $ftp_shipper ] });
+
+          ## Check shippers that have dirs.
+          foreach my $shipper ( $ftp_shipper , $copy_shipper ){
             lives_ok(sub{ $shipper->check_config(); } , "Check config is OK");
             ok( my $xlog_dir = $shipper->xlog_dir() , "Xlog dir is defined");
             cmp_ok( $xlog_dir, 'eq' , $shipper->xlog_dir(), "Same dirs first and second time");
             ok( my $snapshot_dir = $shipper->snapshot_dir() , "snapshot dir is defined");
             cmp_ok( $snapshot_dir, 'eq' , $shipper->snapshot_dir(), "Same dirs first and second time");
+          }
+
+          ## Check methods common to all shippers.
+          foreach my $shipper ( $ftp_shipper , $copy_shipper, $multi_shipper1 ) {
+            lives_ok(sub{ $shipper->check_config(); } , "Check config is OK for shipper $shipper");
+            lives_ok(sub{ $shipper->check_config(); } , "Check config is OK AGAIN for shipper $shipper");
             my ($tmp_fh , $tmp_file ) = File::Temp::tempfile('aaaa_snapshot_XXXX' , TMPDIR => 1 , UNLINK => 1);
             print $tmp_fh "FILEBACKUPCONTENT\n";
             close $tmp_fh;
             lives_ok( sub{ $shipper->ship_snapshot_file($tmp_file) }, "Shipping a snapshot file works");
-            dies_ok( sub{ $shipper->ship_snapshot_file($tmp_file) } , "Shipping it again fails");
+            unless( $shipper =~ /MultiShipper/ ){
+              dies_ok( sub{ $shipper->ship_snapshot_file($tmp_file) } , "Shipping it again fails");
+            }
             ($tmp_fh , $tmp_file ) = File::Temp::tempfile('aaaaXXXX', TMPDIR => 1 , UNLINK => 1);
             print $tmp_fh "FILELOGCONTENT\n";
             close $tmp_fh;
             lives_ok( sub{ $shipper->ship_xlog_file($tmp_file) }, "Shipping an xlog file works");
-            dies_ok( sub{ $shipper->ship_xlog_file($tmp_file) } , "Shipping it again fails");
+            unless( $shipper =~ /MultiShipper/ ){
+              dies_ok( sub{ $shipper->ship_xlog_file($tmp_file) } , "Shipping it again fails");
+            }
 
             ok( ! $shipper->xlog_has_arrived('bbrodriguez') , "Non existant file name cannot be there");
             ok( $shipper->xlog_has_arrived(basename($tmp_file)) , "Ok shipped temp file has arrived");
+
             ## Let us ship a few files.
             my @xlog_files = ();
             foreach my $char ( 'b' , 'c' , 'd' ) {
@@ -87,10 +105,13 @@ test_tcp
               close $fh;
 
               lives_ok( sub{ $shipper->ship_snapshot_file($fname) }, "Shipping snapshot $fname works");
-              dies_ok( sub{ $shipper->ship_snapshot_file($fname) } , "Shipping it again fails");
-
+              unless( $shipper =~ /MultiShipper/ ){
+                dies_ok( sub{ $shipper->ship_snapshot_file($fname) } , "Shipping it again fails");
+              }
               lives_ok( sub{ $shipper->ship_xlog_file($fname) }, "Shipping xlog $fname works");
-              dies_ok( sub{ $shipper->ship_xlog_file($fname) } , "Shipping it again fails");
+              unless( $shipper =~ /MultiShipper/ ){
+                dies_ok( sub{ $shipper->ship_xlog_file($fname) } , "Shipping it again fails");
+              }
               ok( $shipper->xlog_has_arrived(basename($fname)) , "Ok shipped temp file has arrived");
             }
 

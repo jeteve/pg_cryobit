@@ -17,7 +17,7 @@ has 'ftp_password' => ( is => 'ro' , isa => 'Str', required => 1 );
 ## The destination directory in the ftp server
 has 'backup_dir' => ( is => 'ro' , isa => 'Str' , required => 1 );
 
-has 'net_ftp' => ( is => 'ro' , isa => 'Net::FTP' , lazy_build => 1);
+##has 'net_ftp' => ( is => 'ro' , isa => 'Net::FTP' , lazy_build => 1);
 
 =head1 NAME
 
@@ -51,12 +51,24 @@ sub _build_net_ftp{
   return $ftp;
 }
 
+=head2 net_ftp
+
+Returns a fresh connection to the ftp server.
+
+=cut
+
+sub net_ftp{
+  my ($self) = @_;
+  return $self->_build_net_ftp();
+}
+
 sub _ftp_session{
   my ($self , $sub ) = @_;
   my $ftp = $self->net_ftp();
   my $ret;
   eval{
     $ret = &{$sub}($ftp);
+    $ftp->quit();
   };
   my $err = $@;
   if ( $err ) {
@@ -103,6 +115,7 @@ sub check_config{
   my $ftp = $self->net_ftp();
 
   ## Check we can change to the remote root server.
+  $LOGGER->info("Changing to ".$self->backup_dir());
   $ftp->cwd($self->backup_dir())
     or die "Cannot change to ".$self->backup_dir.":".$ftp->message."\n";
 
@@ -115,6 +128,9 @@ sub check_config{
   $LOGGER->info("Cleaning test directory check_config_test");
   $ftp->rmdir('check_config_test')
     or die "Cannot destroy test directory :".$ftp->message."\n";
+
+  ## Finish the ftp session. Others will use their own
+  $ftp->quit();
 
   unless ( $self->xlog_dir() ) {
     die "Cannot make xlog_dir";

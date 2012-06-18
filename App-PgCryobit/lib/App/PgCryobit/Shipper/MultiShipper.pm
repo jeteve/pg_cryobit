@@ -7,6 +7,8 @@ use File::Copy;
 use File::Basename;
 
 has 'shippers' => ( is => 'ro' , isa => 'ArrayRef[App::PgCryobit::Shipper]' , required => 1 , default => sub{ []; } );
+## Holds the crippled shippers.
+has 'crippled' => ( is => 'ro' , isa => 'HashRef[App::PgCryobit::Shipper]' , required => 1 , default => sub{ {}; } );
 
 my $LOGGER = Log::Log4perl->get_logger();
 
@@ -20,19 +22,44 @@ App::PgCryobit::Shipper::MultiShipper - A shipper for composing from other shipp
 
 See L<App::PgCryobit::Shipper>
 
+Distributes the checkconfig to the subshippers.
+
 =cut
 
 sub check_config{
     my ($self) = @_;
-    # $LOGGER->debug("Checking backup directory ".$self->backup_dir());
-    # unless( -d $self->backup_dir() ){
-    #     die $self->backup_dir()." is NOT a directory\n";
-    # }
-    # unless( -w $self->backup_dir() ){
-    #     die $self->backup_dir()." is NOT writable\n";
-    # }
+
+    my $err = 0;
+    foreach my $shipper ( @{$self->shippers()} ){
+      $LOGGER->debug("Checking sub shipper".$shipper);
+      $shipper->check_config();
+    }
     return 0;
 }
+
+sub _valid_shippers{
+  my ($self) = @_;
+  my @shippers = @{$self->shippers()};
+  my @valid = ();
+  foreach my $candidate ( @shippers ){
+    unless( $self->crippled()->{$candidate} ){
+      push @valid, $candidate;
+    }else{
+      $LOGGER->warn("Not using shipper $candidate as it failed in this process");
+    }
+  }
+  unless( @valid ){
+    die "No valid shippers in $self anymore";
+  }
+  return @valid;
+}
+
+sub _cripple_shipper{
+  my ($self, $shipper) = @_;
+  $LOGGER->info("Marking $shipper as Crippled. Will not use it for the rest of this process");
+  $self->crippled()->{$shipper.''} = $shipper;
+}
+
 
 =head2 ship_xlog_file
 
@@ -42,14 +69,20 @@ See L<App::PgCryobit::Shipper>
 
 sub ship_xlog_file{
     my ($self , $file) = @_;
-    # my $basename = basename($file);
-    # my $destination = $self->xlog_dir().'/'.$basename;
-    # if ( -f $destination ){
-    #     die "Destination file $destination already exists for copying $file\n";
-    # }
-    # # Copy the file to the basename
-    # $LOGGER->info("Copying log file '$file' to '$destination'");
-    # copy($file,$destination) or die "Copy from $file to $destination failed: $!\n";
+    $LOGGER->info("Multi shipping xlog file $file");
+    my $success = 0;
+    foreach my $shipper ( $self->_valid_shippers() ){
+      eval{ $shipper->ship_xlog_file($file); };
+      if( my $err = $@ ){
+        $LOGGER->warn(qq|Shipper $shipper has failed to ship the file: $err|);
+        $self->_cripple_shipper($shipper);
+      }else{
+        $success++;
+      }
+    }
+    unless( $success ){
+      die "Could not ship xlog $file successfully with any shipper";
+    }
 }
 
 =head2 ship_snapshot_file
@@ -59,66 +92,78 @@ See L<App::PgCryobit::Shipper>
 =cut
 
 sub ship_snapshot_file{
-    my ($self, $file) = @_;
-    # my $basename = basename($file);
-    # my $destination = $self->snapshot_dir().'/'.$basename;
-    # if ( -f $destination ){
-    #     die "Destination file $destination already exists for copying $file\n";
-    # }
-    # # Copy the file to the basename
-    # $LOGGER->info("Copying snapshot file '$file' to '$destination'");
-    # copy($file,$destination) or die "Copy from $file to $destination failed: $!\n";
+  my ($self, $file) = @_;
+  $LOGGER->info("Multi shipping snapshot file $file");
+  my $success = 0;
+  foreach my $shipper ( $self->_valid_shippers() ){
+    eval{ $shipper->ship_snapshot_file($file); };
+    if( my $err = $@ ){
+      $LOGGER->warn(qq|Shipper $shipper has failed to ship the file: $err|);
+      $self->_cripple_shipper($shipper);
+    }else{
+      $success++;
+    }
+  }
+  unless( $success ){
+    die "Could not ship xlog $file successfully with any shipper";
+  }
 }
 
 =head2 xlog_has_arrived
 
 See L<App::PgCryobit::Shipper>
 
+Returns true if the given file has arrived via AT LEAST ONE of the shippers.
+
+This makes multishippers more reliable, which is the goal.
+
 =cut
 
 sub xlog_has_arrived{
     my ($self, $xlog_file) = @_;
-    # $LOGGER->debug("Testing if $xlog_file exists");
-    # if( -f $self->xlog_dir().'/'.$xlog_file ){
-    #   return 1;
-    # }
-    # return 0;
+
+    foreach my $shipper ( $self->_valid_shippers() ){
+      if( $shipper->xlog_has_arrived($xlog_file) ){
+        return 1;
+      }
+    }
+    return 0;
 }
 
 =head2 clean_xlogs_youngerthan
 
 See L<App::PgCryobit::Shipper>
 
+Dispatches the request to the valid shippers. Just warns in case of errors.
+
 =cut
 
 sub clean_xlogs_youngerthan{
-    my ($self, $file) = @_;
-    # $LOGGER->info("Cleaning up xlog files younger than $file");
-    # my @candidates = glob $self->xlog_dir().'/*';
-    # foreach my $candidate ( @candidates ){
-    #     if ( basename($candidate) lt $file ){
-    #       $LOGGER->debug("Unlinking $candidate");
-    #       unlink $candidate or die "Cannot remove $candidate: $!\n";
-    #     }
-    # }
+  my ($self, $file) = @_;
+  foreach my $shipper ( $self->_valid_shippers() ){
+    eval{ $shipper->clean_xlogs_youngerthan($file) ;};
+    if( my $err = $@ ){
+      $LOGGER->warn("Failed to clean xlogs younger thant $file with $shipper: $err");
+    }
+  }
 }
 
 =head2 clean_archives_youngerthan
 
 See L<App::PgCryobit::Shipper>
 
+Dispatches the cleanup query.
+
 =cut
 
 sub clean_archives_youngerthan{
   my ($self, $file) = @_;
-  # $LOGGER->info("Cleaning up archive file younger than $file");
-  # my @candidates = glob $self->snapshot_dir().'/*';
-  # foreach my $candidate ( @candidates ){
-  #   if ( basename($candidate) lt $file ){
-  #     $LOGGER->debug("Unlinking $candidate");
-  #     unlink $candidate or die "Cannot remove $candidate: $!\n";
-  #   }
-  # }
+  foreach my $shipper ( $self->_valid_shippers() ){
+    eval{ $shipper->clean_archives_youngerthan($file) ;};
+    if( my $err = $@ ){
+      $LOGGER->warn("Failed to clean archives younger thant $file with $shipper: $err");
+    }
+  }
 }
 
 
