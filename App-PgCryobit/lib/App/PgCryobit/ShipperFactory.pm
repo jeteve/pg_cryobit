@@ -13,6 +13,7 @@ my $shipper = $factory->build_shipper();
 =cut
 
 has 'config' => ( is => 'ro' , isa => 'HashRef' , required => 1);
+has 'app' => ( is => 'ro' , weak_ref => 1 , isa => 'App::PgCryobit' , required => 1 );
 
 =head2 build_shipper
 

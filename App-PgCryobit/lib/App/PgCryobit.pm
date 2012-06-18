@@ -61,22 +61,43 @@ sub _build_configuration{
 
 sub _build_shipper{
     my ($self) = @_;
-    my $shipper_factory;
     my $factory_class = $self->configuration->{shipper}->{plugin};
+    $factory_class = $self->load_factory_class($factory_class);
+    return $factory_class->new( { config => $self->configuration->{shipper},
+                                  app => $self
+                                } )->build_shipper();
+}
 
-    $LOGGER->info("Loading shipper factory class $factory_class");
-    my $load_err;
+=head2 load_factory_class
+
+Convenience method. Loads the given $factory_class and returns it so
+you can instanciate it. Dies in case of failure to load the class.
+
+Usage:
+
+ my $factory_class = $this->load_factory_class($factory_class);
+ my $factory = $factory_class->new({ ... });
+
+=cut
+
+sub load_factory_class{
+  my ($self, $factory_class) = @_;
+
+  $LOGGER->info("Loading shipper factory class $factory_class");
+  my $load_err;
+  my $shipper_factory;
+
+  eval{ $shipper_factory = Class::MOP::load_class($factory_class) };
+  $load_err = $@;
+  unless( $shipper_factory ){
+    $factory_class = 'App::PgCryobit::ShipperFactory::'.$factory_class;
     eval{ $shipper_factory = Class::MOP::load_class($factory_class) };
     $load_err = $@;
-    unless( $shipper_factory ){
-      $factory_class = 'App::PgCryobit::ShipperFactory::'.$factory_class;
-      eval{ $shipper_factory = Class::MOP::load_class($factory_class) };
-      $load_err = $@;
-    }
-    unless( $shipper_factory ){
-      die "Cannot load factory plugin ".$factory_class.": $load_err.\n  * If this class is known to exists, try loading it with perl -M$factory_class\n";
-    }
-    return $factory_class->new( { config => $self->configuration->{shipper} } )->build_shipper();
+  }
+  unless( $shipper_factory ){
+    die "Cannot load factory plugin ".$factory_class.": $load_err.\n  * If this class is known to exists, try loading it with perl -M$factory_class\n";
+  }
+  return $factory_class;
 }
 
 =head2 feature_checkconfig
