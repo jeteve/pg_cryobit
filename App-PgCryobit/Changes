@@ -1,5 +1,10 @@
 Revision history for App-PgCryobit
 
+0.03_01 2012-06-19
+        Added MultiShipper
+        Now logs using Log::Log4perl
+        Added Log level control
+
 0.02    2011-06-03
         Added FTP Shipper
         Better doc.
