@@ -1,11 +1,12 @@
 #!perl -w
 
-use Test::More tests => 24;
+use Test::More;
+#use Test::More qw/no_plan/;
 use Test::Exception;
 use Test::postgresql;
 use File::Temp;
 use Log::Log4perl qw/:easy/;
-Log::Log4perl->easy_init($DEBUG);
+Log::Log4perl->easy_init($INFO);
 
 BEGIN {
     use_ok( 'App::PgCryobit' ) || print "Bail out!
@@ -74,7 +75,6 @@ ok( $cryo->configuration()->{data_directory} = $pgsql->base_dir(), "Ok setting t
 is ( $cryo->feature_checkconfig(), 1 , "All is not fine, the backup_dir in config is wrong");
 
 ## A last one with everything correct
-
 lives_ok( sub{ $cryo = App::PgCryobit->new({ config_paths => ['conf_test/pg_cryobit.conf'] }); }, "Lives with good test config");
 ok( $conf = $cryo->configuration() , "Conf is loaded");
 is( $cryo->feature_checkconfig(), 1 , "Impossible to connect without a good DSN");
@@ -86,4 +86,6 @@ ok( $cryo->configuration()->{shipper}->{backup_dir} = $temp_backup_dir , "Ok set
 ## Dump the right config to the temp conf file used by the database.
 diag("Saving good config to $tc_file");
 $cryo->config_general()->save_file($tc_file, $cryo->configuration());
-is ( $cryo->feature_checkconfig(), 0 , "All is file");
+is ( $cryo->feature_checkconfig(), 0 , "All is fine");
+$pgsql->stop();
+done_testing();

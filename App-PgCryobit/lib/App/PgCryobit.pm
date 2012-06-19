@@ -5,6 +5,7 @@ use Config::General;
 use File::Temp;
 use DBI;
 use Log::Log4perl;
+use Data::Dumper;
 
 =head1 NAME
 
@@ -46,6 +47,7 @@ sub _build_configuration{
       $self->config_general(Config::General->new($path));
       %configuration = $self->config_general->getall();
       $configuration{this_file} = $path;
+      $LOGGER->trace("Loaded configuration is ".Dumper(\%configuration));
       return \%configuration;
     }
     if( -d $path && -r $path.'/pg_cryobit.conf' ){
@@ -53,6 +55,7 @@ sub _build_configuration{
       $self->config_general(Config::General->new($path.'/pg_cryobit.conf'));
       %configuration = $self->config_general->getall();
       $configuration{this_file} = $path.'/pg_cryobit.conf';
+      $LOGGER->trace("Loaded configuration is ".Dumper(\%configuration));
       return \%configuration;
     }
   }

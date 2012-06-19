@@ -6,7 +6,7 @@ extends qw/App::PgCryobit::Shipper/;
 use File::Copy;
 use File::Basename;
 
-has 'backup_dir' => ( is => 'ro' , isa => 'Str' , required => 1 );
+has 'backup_dir' => ( is => 'rw' , isa => 'Str' , required => 1 );
 has 'xlog_dir' => ( is => 'ro' , isa => 'Str' , lazy_build => 1 );
 has 'snapshot_dir' => ( is => 'ro', isa => 'Str', lazy_build => 1);
 

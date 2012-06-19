@@ -17,7 +17,7 @@ my %CONFIGS = (
                                                                  ftp_password => 'PASSWORD',
                                                                },
                'App::PgCryobit::ShipperFactory::MultiFactory' => {
-                                                                  'plugins' =>
+                                                                  'shipper' =>
                                                                   [{
                                                                     'plugin' => 'CopyFactory',
                                                                     'backup_dir' => '/nonexisting'

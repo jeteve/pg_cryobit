@@ -12,22 +12,30 @@ This will return a MultiShipper
 
 sub build_shipper{
     my ($self) = @_;
-    my $plugins = $self->config()->{plugins};
-    unless( $plugins && ref($plugins) eq 'ARRAY' && @$plugins ){
-      die "Missing array of 'plugins' in configuration\n";
+    my $shippers = $self->config()->{shipper};
+    unless( $shippers ){
+      die "Missing shipper(s) in MultiShipper configuration\n";
+    }
+    ## In case there is only one shipper, it's
+    ## a straigh hash in the config format.
+    if( ref( $shippers ) eq 'HASH' ){
+      $shippers = [ $shippers ];
+    }
+    unless( ref($shippers) eq 'ARRAY' ){
+      die "Bad shipper array";
     }
 
     my @shippers = ();
 
     my $count = 0;
-    foreach my $plugin_hash ( @$plugins ){
+    foreach my $shipper_hash ( @$shippers ){
       $count++;
-      my $factory_class = $plugin_hash->{plugin};
+      my $factory_class = $shipper_hash->{plugin};
       unless( $factory_class ){
-        die "Missing 'plugin' parameter for plugin configuration # $count\n";
+        die "Missing 'plugin' parameter for shipper configuration # $count\n";
       }
       $factory_class = $self->app()->load_factory_class($factory_class);
-      push @shippers , $factory_class->new({ config => $plugin_hash , app => $self->app() })->build_shipper();
+      push @shippers , $factory_class->new({ config => $shipper_hash , app => $self->app() })->build_shipper();
     }
 
     return App::PgCryobit::Shipper::MultiShipper->new( { shippers => \@shippers } ) ;

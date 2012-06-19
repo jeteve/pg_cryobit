@@ -1,6 +1,6 @@
 #!perl -w
 
-use Test::More tests => 16;
+use Test::More;
 use Test::Exception;
 use Test::postgresql;
 use File::Temp;
@@ -78,3 +78,6 @@ is( $cryo->feature_rotatewal(), 0 , "Rotating wal is OK" );
 ## And another one
 is( $cryo->feature_rotatewal(), 0 , "Rotating a second time is OK");
 is( $cryo->feature_archivesnapshot(), 0 , "Taking a snapshot and archiving it is OK");
+$pgsql->stop();
+
+done_testing();
