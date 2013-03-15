@@ -333,8 +333,8 @@ sub feature_archivesnapshot{
     my ($archive_row) = $dbh->selectrow_array('SELECT pg_xlogfile_name_offset(pg_start_backup('.$dbh->quote($archive_name).'))');
     my ($archived_wal,$archived_offset) = ( $archive_row =~ /\((\w+?),(\w+?)\)/ );
     unless( $archived_wal && $archived_offset ){
-	$LOGGER->error("Cannot parse wal and offet from $archive_row");
-	return 1;
+      $LOGGER->error("Cannot parse wal and offet from $archive_row");
+      return 1;
     }
     $archived_offset = sprintf("%08x", $archived_offset);
 
@@ -345,7 +345,7 @@ sub feature_archivesnapshot{
       my $cmd = 'tar -czhf '.$archive_full_file.' '.$self->configuration->{data_directory};
       my $tar_ret = system($cmd);
       if( $tar_ret != 0 ){
-	die "Archiving command $cmd has failed\n";
+        die "Archiving command $cmd has failed (returned $tar_ret)\n";
       }
     };
     if ( $@ ){
