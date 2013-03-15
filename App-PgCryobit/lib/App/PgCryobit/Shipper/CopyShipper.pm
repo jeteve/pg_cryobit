@@ -54,7 +54,7 @@ See L<App::PgCryobit::Shipper>
 
 sub check_config{
     my ($self) = @_;
-    $LOGGER->debug("Checking backup directory ".$self->backup_dir());
+    $LOGGER->info("Checking backup directory ".$self->backup_dir());
     unless( -d $self->backup_dir() ){
       die $self->backup_dir()." is NOT a directory\n";
     }
