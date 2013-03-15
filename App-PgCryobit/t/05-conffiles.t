@@ -3,9 +3,15 @@ use strict;
 use warnings;
 
 use Test::More;
-#use Test::More qw/no_plan/;
 use Test::Exception;
-use Test::postgresql;
+
+BEGIN{
+  eval{ require Test::postgresql; };
+  if( $@ ){
+    plan skip_all => 'No Test::postgresql';
+    done_testing();
+  }
+}
 use File::Temp;
 use Log::Log4perl qw/:easy/;
 Log::Log4perl->easy_init($TRACE);

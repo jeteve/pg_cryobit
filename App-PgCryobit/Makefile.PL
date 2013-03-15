@@ -25,10 +25,7 @@ requires_external_bin 'tar';
 
 build_requires 'Test::More';
 build_requires 'Test::Exception';
-build_requires 'Test::postgresql' => 0.09;
 build_requires 'File::Spec';
-build_requires 'Test::TCP' => 0.16;
-build_requires 'Test::FTP::Server' => 0.012;
 auto_install;
 
 WriteAll;

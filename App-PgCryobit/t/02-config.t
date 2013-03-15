@@ -1,17 +1,23 @@
 #!perl -w
 
-use Test::More;
 #use Test::More qw/no_plan/;
+use App::PgCryobit;
+
+use Test::More;
 use Test::Exception;
-use Test::postgresql;
+
 use File::Temp;
 use Log::Log4perl qw/:easy/;
 Log::Log4perl->easy_init($INFO);
 
 BEGIN {
-    use_ok( 'App::PgCryobit' ) || print "Bail out!
-";
+  eval{ require Test::postgresql; };
+  if( $@ ){
+    plan skip_all => 'No Test::postgresql';
+    done_testing();
+  }
 }
+
 
 my $script_file = File::Spec->rel2abs( './script/pg_cryobit' ) ;
 unless( -f $script_file && -x $script_file ){
@@ -88,4 +94,5 @@ diag("Saving good config to $tc_file");
 $cryo->config_general()->save_file($tc_file, $cryo->configuration());
 is ( $cryo->feature_checkconfig(), 0 , "All is fine");
 $pgsql->stop();
+
 done_testing();

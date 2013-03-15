@@ -4,8 +4,12 @@ use Test::More;
 use Test::Exception;
 use File::Temp;
 use File::Basename;
-use Test::FTP::Server;
-use Test::TCP;
+
+eval{ require Test::FTP::Server; };
+plan skip_all => 'No Test::FTP::Server' if $@;
+
+eval{ require Test::TCP; };
+plan skip_all => 'No Test::TCP' if $@;
 
 use App::PgCryobit::Shipper::FTPShipper;
 use App::PgCryobit::Shipper::CopyShipper;
@@ -22,7 +26,7 @@ my $pass = 'cooper';
 my $sandbox_base = File::Temp::tempdir( DIR => 't/remote_ftp' , CLEANUP => 1 );
 mkdir $sandbox_base.'/backup';
 
-test_tcp
+Test::TCP::test_tcp
   (
    server
    => sub{

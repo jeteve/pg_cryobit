@@ -1,5 +1,8 @@
 Revision history for App-PgCryobit
 
+0.03_02 2013-03-15
+        Made test suite tolerant to missing exotic modules
+
 0.03_01 2012-06-19
         Added MultiShipper
         Now logs using Log::Log4perl
