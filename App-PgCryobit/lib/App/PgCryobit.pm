@@ -141,9 +141,11 @@ sub feature_checkconfig{
 
     if ( $conf->{snapshooting_dir} ){
       unless( ( -d $conf->{snapshooting_dir} ) && ( -w $conf->{snapshooting_dir} ) ){
-	$LOGGER->error("Cannot access ".$conf->{snapshooting_dir}." in Write mode (defined in ".$conf->{this_file}.")");
-	return 1;
+        $LOGGER->error("Cannot access ".$conf->{snapshooting_dir}." in Write mode (defined in ".$conf->{this_file}.")");
+        return 1;
       }
+    }else{
+      $LOGGER->warn("Conf file ".$conf->{this_file}." deos not contain 'snapshooting_dir'. Will snapshot in current working directory.");
     }
 
     unless( $conf->{dsn} ){
@@ -333,7 +335,7 @@ sub feature_archivesnapshot{
     my ($archive_row) = $dbh->selectrow_array('SELECT pg_xlogfile_name_offset(pg_start_backup('.$dbh->quote($archive_name).'))');
     my ($archived_wal,$archived_offset) = ( $archive_row =~ /\((\w+?),(\w+?)\)/ );
     unless( $archived_wal && $archived_offset ){
-      $LOGGER->error("Cannot parse wal and offet from $archive_row");
+      $LOGGER->error("Cannot parse wal and offet from $archive_row. ".$DBI::errstr);
       return 1;
     }
     $archived_offset = sprintf("%08x", $archived_offset);
@@ -343,15 +345,17 @@ sub feature_archivesnapshot{
       # Prefix archive name with configuration 'snapshooting_dir' or current dir
       $archive_full_file = ( $self->configuration->{snapshooting_dir} || './' ).$archive_name;
       my $cmd = 'tar -czhf '.$archive_full_file.' '.$self->configuration->{data_directory};
+      $LOGGER->info("Doing $cmd ..");
       my $tar_ret = system($cmd);
       if( $tar_ret != 0 ){
         die "Archiving command $cmd has failed (returned $tar_ret)\n";
       }
     };
     if ( $@ ){
-	$dbh->selectrow_array('SELECT  pg_xlogfile_name_offset( pg_stop_backup())');
-	$LOGGER->error("CRASH in building the main archive: $@");
-	return 1;
+      $LOGGER->info("Swicthing off Postgresql backup mode.");
+      $dbh->selectrow_array('SELECT  pg_xlogfile_name_offset( pg_stop_backup())');
+      $LOGGER->error("CRASH in building the main archive: $@");
+      return 1;
     }
     my ($end_archived_row) = $dbh->selectrow_array('SELECT  pg_xlogfile_name_offset( pg_stop_backup())');
 
