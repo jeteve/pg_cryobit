@@ -1,7 +1,7 @@
-pg_cryobit README
-=================
+pg_cryobit
+==========
 
-pg_cryobit allows you to set up your PostgreSQL continuous backup from a centralized point.
+pg_cryobit allows you to set up your PostgreSQL continuous backup from a centralized config file.
 
 It can manage different wal logs and backup shipping methods via plugins.
 
