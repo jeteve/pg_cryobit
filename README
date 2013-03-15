@@ -9,20 +9,23 @@ It can manage different wal logs and backup shipping methods via plugins.
 HOW TO INSTALL AND USE:
 -----------------------
 
-0 - Install from CPAN:
+# 0 - Install:
 
 $ cpan -i App::PgCryobit
 
-1 - Write a pg_cryobit.conf configuration file and put it in your current directory, $HOME, or /etc/. See CONFIGURATION section.
+# 1 - Write a pg_cryobit.conf configuration file and put it in your current directory, $HOME, or /etc/. See CONFIGURATION section.
 
-2 - In your postgresql.conf, set your PostgeSQL server so it uses pg_cryobit as an archive command.
+# 2 - In your postgresql.conf, set your PostgeSQL server so it uses pg_cryobit as an archive command.
 
-It can be as simple as this:
+For instance:
 
 archive_mode = on
 archive_command = 'pg_cryobit archivewal --file=%p'
 
-3 - Restart your PostgreSQL server and test your configuration:
+# 3 - Restart your PostgreSQL server and test your configuration.
+
+Note: Depending on the way you configured your pg_cryobit.conf connection string,
+you might want to run pg_cryobit as the 'postgres' user.
 
 $ pg_cryobit fullarchive
 
@@ -32,7 +35,7 @@ $ pg_cryobit fullarchive
 
 $ pg_cryobit archivesnapshot
 
-5 - Job done.
+5 - Install a cronjob .
 
 CONFIGURATION
 -------------
