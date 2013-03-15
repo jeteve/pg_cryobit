@@ -108,8 +108,8 @@ See L<App::PgCryobit::Shipper>
 
 sub xlog_has_arrived{
     my ($self, $xlog_file) = @_;
-    $LOGGER->debug("Testing if $xlog_file exists");
-    if( -f $self->xlog_dir().'/'.$xlog_file ){
+    $LOGGER->debug("Testing if xlog file '".( $xlog_file // 'UNDEF' )."'  exists");
+    if( -f $self->xlog_dir().'/'.( $xlog_file // 'will_never_match' ) ){
       return 1;
     }
     return 0;

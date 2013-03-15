@@ -5,6 +5,7 @@ use Config::General;
 use File::Temp;
 use DBI;
 use Log::Log4perl;
+use Data::UUID;
 use Data::Dumper;
 
 =head1 NAME
@@ -34,6 +35,8 @@ has 'shipper' => ( is => 'ro' , isa => 'App::PgCryobit::Shipper' , lazy_build =>
 ## The command line options. The script sets these.
 has 'options' => ( is => 'rw', isa => 'HashRef' , default => sub{ return {} } );
 has 'config_general' => ( is => 'rw' , isa => 'Config::General' );
+
+has 'uuid_gen' => ( is => 'ro', isa => 'Data::UUID' , default => sub{ return Data::UUID->new() });
 
 my $LOGGER = Log::Log4perl->get_logger();
 
@@ -149,7 +152,10 @@ sub feature_checkconfig{
     }
 
     ## Check we can connect using the dsn
-    my $dbh = DBI->connect($conf->{dsn}, undef , undef , { RaiseError => 0 , PrintError => 0 });
+    ## my ($password ) = ( $conf->{dsn} =~ /password=(\.+)/ );
+
+    my $password = undef;
+    my $dbh = DBI->connect($conf->{dsn}, undef , $password , { RaiseError => 0 , PrintError => 0 });
     unless( $dbh ){
       $LOGGER->error("Cannot connect to ".$conf->{dsn}." defined in ".$conf->{this_file}.": ".$DBI::errstr);
       return 1;
@@ -157,18 +163,18 @@ sub feature_checkconfig{
     ## Check we can call some xlog administrative functions
     my ($current_xlogfile) = $dbh->selectrow_array('SELECT pg_xlogfile_name(pg_current_xlog_location())');
     unless( $current_xlogfile ){
-      $LOGGER->error("Cannot find current_xlogfile. Make sure your dsn connects to the DB as a super user in ".$conf->{this_file});
+      $LOGGER->error("Cannot find current_xlogfile (calling pg_current_xlog_location() ). Make sure your dsn connects to the DB as a super user in ".$conf->{this_file});
       return 1;
     }
     ## Check archive mode is ON
     my ($archive_mode) = $dbh->selectrow_array('SHOW archive_mode');
     unless( $archive_mode eq 'on' ){
-      $LOGGER->error("archive_mode is NOT 'on' in database. Please fix that");
+      $LOGGER->error("archive_mode is NOT 'on' in database. Please fix that in your postgresql.conf");
       return 1;
     }
     my ($archive_command) = $dbh->selectrow_array('SHOW archive_command');
     unless( $archive_command =~ /pg_cryobit/ ){
-      $LOGGER->error("archive_command (=$archive_command) does NOT use of pg_cryobit. Please fix that");
+      $LOGGER->error("archive_command (=$archive_command) does NOT use of pg_cryobit. It should look like 'pg_cryobit archivewal --file=\%p' ");
       return 1;
     }
 
@@ -279,12 +285,16 @@ sub feature_rotatewal{
     my ($archive_command) = $dbh->selectrow_array('SHOW archive_command');
 
     ## Perform some transactions so the forced rotation will actually rotate.
-    $dbh->do('DROP TABLE IF EXISTS pg_cryobit_to_force_rotation');
-    $dbh->do('CREATE TABLE pg_cryobit_to_force_rotation (id TEXT)');
-    $dbh->do('INSERT INTO pg_cryobit_force_rotation(id) VALUES(\'Blablabla\')');
-    $dbh->do('DROP TABLE pg_cryobit_to_force_rotation');
+    my $transaction_forcing_table = 'pg_cryobit_'.$self->uuid_gen->create_hex();
+    $dbh->do('CREATE TABLE '.$transaction_forcing_table.' (id TEXT)');
+    $dbh->do('INSERT INTO '.$transaction_forcing_table.'(id) VALUES(\'Blablabla\')');
+    $dbh->do('DROP TABLE '.$transaction_forcing_table);
 
     my ($shipped_log) = $dbh->selectrow_array('SELECT pg_xlogfile_name(pg_switch_xlog())');
+    unless( $shipped_log ){
+      $LOGGER->fatal("Could not switch xlog in Postgresql: ".$DBI::errstr." ABORTING");
+      return 1;
+    }
     $LOGGER->info("PostgreSQL will attempt to ship file $shipped_log using archive_command $archive_command");
     $dbh->disconnect();
 
@@ -302,7 +312,7 @@ sub feature_rotatewal{
 	$time_spend_waiting += 10;
     }
 
-    $LOGGER->error(qq|File $shipped_log is not arrived after we waited for $time_spend_waiting seconds. Please check your PostgreSQL logs|);
+    $LOGGER->fatal(qq|File $shipped_log is not arrived after we waited for $time_spend_waiting seconds. Please check your PostgreSQL logs|);
     return 1;
 }
 
