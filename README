@@ -9,15 +9,23 @@ It can manage different wal logs and backup shipping methods via plugins.
 HOW TO INSTALL AND USE:
 -----------------------
 
-# 0 - Install:
+# 0 - Install
 
-$ cpan -i App::PgCryobit
+If your using a debian based system, have a look there:
+http://deb.perl.it/debian/cpan-deb/#q=App%3A%3APgCryobit
 
-# 1 - Write a pg_cryobit.conf configuration file and put it in your current directory, $HOME, or /etc/. See CONFIGURATION section.
+Or more traditionally
 
-# 2 - In your postgresql.conf, set your PostgeSQL server so it uses pg_cryobit as an archive command.
+$ sudo cpan -i App::PgCryobit
 
-For instance:
+# 1 - Write a pg_cryobit.conf configuration file.
+
+See CONFIGURATION section for examples. Conf files can live in the current directory, your $HOME
+or in /etc/.
+
+# 2 - Amend your postgresql.conf
+
+Make Postgresql use pg_cryobit for log shipping:
 
 archive_mode = on
 archive_command = 'pg_cryobit archivewal --file=%p'
@@ -27,15 +35,19 @@ archive_command = 'pg_cryobit archivewal --file=%p'
 Note: Depending on the way you configured your pg_cryobit.conf connection string,
 you might want to run pg_cryobit as the 'postgres' user.
 
-$ pg_cryobit fullarchive
+$ pg_cryobit checkconfig
 
-(Note: this will perform a test wal logs switch and an archive snapshot)
-
-4 - Whenever you want to take a full snapshot of your PostgreSQL DB, use:
+# 4 - Whenever you want to take a full snapshot of your PostgreSQL DB, use:
 
 $ pg_cryobit archivesnapshot
 
-5 - Install a cronjob .
+And to force rotating and shipping a new WAL file:
+
+$ pg_cryobit rotatewal
+
+# 5 - Install a cronjob.
+
+If you want to take a hot snapshot of your data regularly.
 
 CONFIGURATION
 -------------

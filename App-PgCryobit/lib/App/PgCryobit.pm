@@ -363,40 +363,43 @@ sub feature_archivesnapshot{
 
     ## Ship the archive file
     eval{
-	$shipper->ship_snapshot_file($archive_full_file);
+      $shipper->ship_snapshot_file($archive_full_file);
     };
     if( $@ ){
-	$LOGGER->error("Error shipping $archive_name : $@");
-	return 1;
+      $LOGGER->error("Error shipping $archive_name : $@");
+      return 1;
     }
     ## Wait for archive_wal.archive_offset.backup to be shipped.
     my $time_spend_waiting = 0;
     sleep(1);
     while( $time_spend_waiting < 60 ){
-	if( $shipper->xlog_has_arrived($archived_wal) && $shipper->xlog_has_arrived($archived_wal.'.'.$archived_offset.'.backup') ){
-	    $time_spend_waiting = 0;
-	    last;
-	}
-	sleep(10);
-	$time_spend_waiting += 10;
+      if( $shipper->xlog_has_arrived($archived_wal) && $shipper->xlog_has_arrived($archived_wal.'.'.$archived_offset.'.backup') ){
+        $time_spend_waiting = 0;
+        last;
+      }
+      $LOGGER->info("Log file $archived_wal and backup marker $archived_wal.$archived_offset.backup  have not been shipped by Postgresql yet after $time_spend_waiting secs. Waiting 10secs more");
+      sleep(10);
+      $time_spend_waiting += 10;
     }
     if( $time_spend_waiting ){
-	$LOGGER->error("$archived_wal and $archived_wal.$archived_offset.backup are not shipped after $time_spend_waiting seconds");
-	return 1;
+      $LOGGER->error("$archived_wal and $archived_wal.$archived_offset.backup are not shipped after $time_spend_waiting seconds");
+      return 1;
+    }else{
+      $LOGGER->info("$archived_wal and $archived_wal.$archived_offset.backup have been shipped.");
     }
 
     if( $self->options()->{deepclean} ){
       $LOGGER->info("Will perform a deep clean");
       ## Deepcleaning has been requested
       eval{
-	$LOGGER->info("Cleaning wal logs younger than $archived_wal");
-	$shipper->clean_xlogs_youngerthan($archived_wal);
-	$LOGGER->info("Cleaning archives snapshots younger than $archive_name");
-	$shipper->clean_archives_youngerthan($archive_name);
+        $LOGGER->info("Cleaning wal logs younger than $archived_wal");
+        $shipper->clean_xlogs_youngerthan($archived_wal);
+        $LOGGER->info("Cleaning archives snapshots younger than $archive_name");
+        $shipper->clean_archives_youngerthan($archive_name);
       };
       if( $@ ){
-	$LOGGER->error("Cannot perform deepclean : $@");
-	return 1;
+        $LOGGER->error("Cannot perform deepclean : $@");
+        return 1;
       }
     } ## end of if deepclean
     return 0;
