@@ -59,7 +59,8 @@ sub _build_configuration{
       return \%configuration;
     }
   }
-  die "No pg_cryobit.conf could be found in paths ".join(':',@{$self->config_paths()});
+  die "No pg_cryobit.conf could be found in paths ".join(':',@{$self->config_paths()})
+    ."\n Look here for examples: https://github.com/jeteve/pg_cryobit/tree/master/App-PgCryobit/conf_example\n";
 }
 
 sub _build_shipper{
@@ -131,7 +132,7 @@ sub feature_checkconfig{
     ## Check this data_directory can be read
     ## This is useful for full archive
     unless(( -d $conf->{data_directory} ) && ( -r $conf->{data_directory} )){
-      $LOGGER->error("Cannot read directory ".$conf->{data_directory}." (defined in ".$conf->{this_file}.")");
+      $LOGGER->error("Cannot access directory ".$conf->{data_directory}." in Read mode (defined in ".$conf->{this_file}.")");
       return 1;
     }
 
@@ -150,7 +151,7 @@ sub feature_checkconfig{
     ## Check we can connect using the dsn
     my $dbh = DBI->connect($conf->{dsn}, undef , undef , { RaiseError => 0 , PrintError => 0 });
     unless( $dbh ){
-      $LOGGER->error("Cannot connect to ".$conf->{dsn}." defined in ".$conf->{this_file});
+      $LOGGER->error("Cannot connect to ".$conf->{dsn}." defined in ".$conf->{this_file}.": ".$DBI::errstr);
       return 1;
     }
     ## Check we can call some xlog administrative functions
