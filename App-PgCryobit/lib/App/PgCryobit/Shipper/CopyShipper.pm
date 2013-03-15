@@ -18,10 +18,10 @@ sub _build_xlog_dir{
 
     my $xlog_dir = $self->backup_dir().'/xlogs';
     if( -d $xlog_dir ){
-	return $xlog_dir;
+      return $xlog_dir;
     }
     if ( mkdir $xlog_dir ){
-	return $xlog_dir;
+      return $xlog_dir;
     }
     die "Cannot create $xlog_dir for $self\n";
 }
@@ -32,10 +32,10 @@ sub _build_snapshot_dir{
 
     my $snapshot_dir = $self->backup_dir().'/snapshots';
     if( -d $snapshot_dir ){
-	return $snapshot_dir;
+      return $snapshot_dir;
     }
     if ( mkdir $snapshot_dir ){
-	return $snapshot_dir;
+      return $snapshot_dir;
     }
     die "Cannot create $snapshot_dir for $self\n";
 }
@@ -56,10 +56,10 @@ sub check_config{
     my ($self) = @_;
     $LOGGER->debug("Checking backup directory ".$self->backup_dir());
     unless( -d $self->backup_dir() ){
-	die $self->backup_dir()." is NOT a directory\n";
+      die $self->backup_dir()." is NOT a directory\n";
     }
     unless( -w $self->backup_dir() ){
-	die $self->backup_dir()." is NOT writable\n";
+      die $self->backup_dir()." is NOT writable\n";
     }
     return 0;
 }
@@ -75,7 +75,7 @@ sub ship_xlog_file{
     my $basename = basename($file);
     my $destination = $self->xlog_dir().'/'.$basename;
     if ( -f $destination ){
-	die "Destination file $destination already exists for copying $file\n";
+      die "Destination file $destination already exists for copying $file\n";
     }
     # Copy the file to the basename
     $LOGGER->info("Copying log file '$file' to '$destination'");
@@ -93,7 +93,7 @@ sub ship_snapshot_file{
     my $basename = basename($file);
     my $destination = $self->snapshot_dir().'/'.$basename;
     if ( -f $destination ){
-	die "Destination file $destination already exists for copying $file\n";
+      die "Destination file $destination already exists for copying $file\n";
     }
     # Copy the file to the basename
     $LOGGER->info("Copying snapshot file '$file' to '$destination'");

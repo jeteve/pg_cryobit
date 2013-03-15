@@ -304,12 +304,13 @@ sub feature_rotatewal{
     my $time_spend_waiting = 0;
     sleep(1);
     while( $time_spend_waiting < 60 ){
-	if( $shipper->xlog_has_arrived($shipped_log) ){
-          $LOGGER->info("Shipped Log file $shipped_log has arrived.");
-          return 0;
-	}
-	sleep(10);
-	$time_spend_waiting += 10;
+      if( $shipper->xlog_has_arrived($shipped_log) ){
+        $LOGGER->info("Shipped Log file $shipped_log has arrived.");
+        return 0;
+      }
+      $LOGGER->info("Log file $shipped_log has not been shipped by Postgresql yet after $time_spend_waiting secs. Waiting 10secs more");
+      sleep(10);
+      $time_spend_waiting += 10;
     }
 
     $LOGGER->fatal(qq|File $shipped_log is not arrived after we waited for $time_spend_waiting seconds. Please check your PostgreSQL logs|);
