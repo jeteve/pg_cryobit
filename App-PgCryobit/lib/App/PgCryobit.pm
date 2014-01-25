@@ -15,7 +15,7 @@ App::PgCryobit - The pg_cryobit application
 
 =head1 VERSION
 
-Version 0.03_01
+Version 0.03
 
 =head1 SYNOPSIS
 
