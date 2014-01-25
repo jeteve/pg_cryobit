@@ -2,6 +2,7 @@ package App::PgCryobit;
 
 use Moose;
 use Config::General;
+use Class::Load;
 use File::Temp;
 use DBI;
 use Log::Log4perl;
@@ -94,11 +95,11 @@ sub load_factory_class{
   my $load_err;
   my $shipper_factory;
 
-  eval{ $shipper_factory = Class::MOP::load_class($factory_class) };
+  eval{ $shipper_factory = Class::Load::load_class($factory_class) };
   $load_err = $@;
   unless( $shipper_factory ){
     $factory_class = 'App::PgCryobit::ShipperFactory::'.$factory_class;
-    eval{ $shipper_factory = Class::MOP::load_class($factory_class) };
+    eval{ $shipper_factory = Class::Load::load_class($factory_class) };
     $load_err = $@;
   }
   unless( $shipper_factory ){

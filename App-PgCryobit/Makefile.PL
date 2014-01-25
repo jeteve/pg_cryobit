@@ -8,6 +8,7 @@ license  'perl';
 
 requires 'Moose' => 0.94;
 requires 'Config::General' => 2.44;
+requires 'Class::Load' => 0.20;
 requires 'DBD::Pg' => '2.16.1';
 requires 'Pod::Usage' => 1.35;
 requires 'Getopt::Long' => 2.37;
