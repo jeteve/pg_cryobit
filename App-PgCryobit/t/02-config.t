@@ -11,9 +11,9 @@ use Log::Log4perl qw/:easy/;
 Log::Log4perl->easy_init($INFO);
 
 BEGIN {
-  eval{ require Test::postgresql; };
+  eval{ require Test::PostgreSQL; };
   if( $@ ){
-    plan skip_all => 'No Test::postgresql';
+    plan skip_all => 'No Test::PostgreSQL';
     done_testing();
   }
 }
@@ -39,19 +39,19 @@ my $pg_args = ' -c archive_mode=on -c archive_command=\'perl -I'.$test_lib_dir.'
 
 diag("Building a test instance of postgresql");
 eval{
-  $pgsql = Test::postgresql->new(
-                                 postmaster_args => $Test::postgresql::Defaults{postmaster_args} .$pg_args
+  $pgsql = Test::PostgreSQL->new(
+                                 postmaster_args => $Test::PostgreSQL::Defaults{postmaster_args} .$pg_args
                                 );
 };
 if ( $@ ) {
   diag(q|Failed to build postgresql without wal_level. Trying with it.
 This is fine if you are using Postgresql 9.* |);
-  $pgsql = Test::postgresql->new(
-                                 postmaster_args => $Test::postgresql::Defaults{postmaster_args} . ' -c wal_level=archive ' . $pg_args
+  $pgsql = Test::PostgreSQL->new(
+                                 postmaster_args => $Test::PostgreSQL::Defaults{postmaster_args} . ' -c wal_level=archive ' . $pg_args
                                 );
 }
 
-$pgsql or plan skip_all => $Test::postgresql::errstr;
+$pgsql or plan skip_all => $Test::PostgreSQL::errstr;
 
 
 ## Try the same thing with a file path

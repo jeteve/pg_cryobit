@@ -6,9 +6,9 @@ use Test::More;
 use Test::Exception;
 
 BEGIN{
-  eval{ require Test::postgresql; };
+  eval{ require Test::PostgreSQL; };
   if( $@ ){
-    plan skip_all => 'No Test::postgresql';
+    plan skip_all => 'No Test::PostgreSQL';
     done_testing();
   }
 }
