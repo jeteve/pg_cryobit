@@ -5,6 +5,7 @@ all_from 'lib/App/PgCryobit.pm';
 install_script 'pg_cryobit';
 author   q{Jerome Eteve <jerome@eteve.net>};
 license  'perl';
+repository 'https://github.com/jeteve/pg_cryobit';
 
 requires 'Moose' => 0.94;
 requires 'Config::General' => 2.44;
